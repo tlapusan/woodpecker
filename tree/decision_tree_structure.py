@@ -1,5 +1,8 @@
 import graphviz
+import numpy as np
 import pygraphviz as pgv
+
+from matplotlib import pyplot as plt
 
 
 class DecisionTreeStructure:
@@ -15,6 +18,8 @@ class DecisionTreeStructure:
         self.impurity = tree.tree_.impurity
         self.n_node_samples = tree.tree_.n_node_samples
         self.value = tree.tree_.value
+
+        self.is_leaf = []
 
     def show_decision_tree_prediction_path(self, sample):
         node_indicator = self.tree.decision_path([sample])
@@ -43,3 +48,49 @@ class DecisionTreeStructure:
                 g_tree.add_edge(node_id, self.children_right[node_id])
 
         return graphviz.Source(g_tree.string())
+
+    def _calculate_leaf_nodes(self):
+        self.is_leaf = np.zeros(shape=self.node_count, dtype=bool)
+        stack = [(0)]  # seed is the root node id and its parent depth
+        while len(stack) > 0:
+            node_id = stack.pop()
+            # If we have a test node
+            if (self.children_left[node_id] != self.children_right[node_id]):
+                stack.append((self.children_left[node_id]))
+                stack.append((self.children_right[node_id]))
+            else:
+                self.is_leaf[node_id] = True
+
+    def show_leaf_impurity_distribution(self, bins=10):
+        if len(self.is_leaf) == 0:
+            self._calculate_leaf_nodes()
+
+        plt.xticks(np.arange(0.0, 1.0, 0.05))
+        plt.hist([self.impurity[i] for i in range(0, self.node_count) if self.is_leaf[i]], bins=bins)
+
+    def show_leaf_impurity(self):
+        if len(self.is_leaf) == 0:
+            self._calculate_leaf_nodes()
+
+        leaf_impurity = [(i, self.impurity[i]) for i in range(0, self.node_count) if self.is_leaf[i]]
+        x, y = zip(*leaf_impurity)
+        plt.xticks(range(0, len(x)), x)
+        plt.bar(range(0, len(x)), y, label="leaf impurity")
+        plt.legend()
+
+
+    def show_leaf_samples_distribution(self, bins=10):
+        if len(self.is_leaf) == 0:
+            self._calculate_leaf_nodes()
+
+        plt.hist([self.n_node_samples[i] for i in range(0, self.node_count) if self.is_leaf[i]], bins=bins)
+
+    def show_leaf_samples(self):
+        if len(self.is_leaf) == 0:
+            self._calculate_leaf_nodes()
+
+        leaf_impurity = [(i, self.n_node_samples[i]) for i in range(0, self.node_count) if self.is_leaf[i]]
+        x, y = zip(*leaf_impurity)
+        plt.xticks(range(0, len(x)), x)
+        plt.bar(range(0, len(x)), y, label="leaf samples")
+        plt.legend()
