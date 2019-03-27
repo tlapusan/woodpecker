@@ -7,6 +7,8 @@ from matplotlib import pyplot as plt
 
 
 # TODO calculate max_depth (is useful when max_depth is not a parameter and we use for ex. min_samples_split = 100
+# TODO add docs to each method
+# TODO add more details to visualisations (like x, y labels)
 
 class DecisionTreeStructure:
     def __init__(self, tree, features):
@@ -32,24 +34,35 @@ class DecisionTreeStructure:
         g_tree = pgv.AGraph(strict=False, directed=True)
         g_tree.layout(prog='dot')
 
-        for node_id in node_index:
-            #     if leave_id[sample_id] == node_id:
-            #         continue
+        for i in range(0, len(node_index)):
 
-            if (sample[self.feature[node_id]] <= self.threshold[node_id]):
+            node_id = node_index[i]
+
+            if sample[self.feature[node_id]] <= self.threshold[node_id]:
                 threshold_sign = "<="
             else:
                 threshold_sign = ">"
 
             # TODO round(self.value[node_id][0][0], 2) for regression tree
             g_tree.add_node(node_id, color="blue",
-                            label=f"Node {node_id} \n {self.features[self.feature[node_id]]} {threshold_sign} {self.threshold[node_id]} \n samples {self.n_node_samples[node_id]} \n weighted sample {round(self.weighted_n_node_samples[node_id], 1)} \n value {self.value[node_id][0]}, \n impurity {round(self.impurity[node_id], 2)}",
+                            label=f"Node {node_id} \n {self.features[self.feature[node_id]]} {threshold_sign} {self.threshold[node_id]} \n samples {self.n_node_samples[node_id]} \n weighted sample {round(self.weighted_n_node_samples[node_id], 1)} \n values {self.value[node_id][0]}, \n impurity {round(self.impurity[node_id], 2)}",
                             fontsize=10, center=True, shape="ellipse")
 
             if self.children_left[node_id] != -1:
                 g_tree.add_edge(node_id, self.children_left[node_id])
+
+                if self.children_left[node_id] != node_index[i + 1]:
+                    left_node_id = self.children_left[node_id]
+                    g_tree.add_node(left_node_id,
+                                    label=f"Node {left_node_id} \n feature split {self.features[self.feature[left_node_id]]} \n samples {self.n_node_samples[left_node_id]} \n values {self.value[left_node_id][0]}, \n impurity {round(self.impurity[left_node_id], 2)} ",
+                                    fontsize=10, center=True, shape="ellipse")
             if self.children_right[node_id] != -1:
                 g_tree.add_edge(node_id, self.children_right[node_id])
+                if self.children_right[node_id] != node_index[i + 1]:
+                    right_node_id = self.children_right[node_id]
+                    g_tree.add_node(right_node_id,
+                                    label=f"Node {right_node_id} \n feature split {self.features[self.feature[right_node_id]]} \n samples {self.n_node_samples[right_node_id]} \n values {self.value[right_node_id][0]}, \n impurity {round(self.impurity[right_node_id], 2)} ",
+                                    fontsize=10, center=True, shape="ellipse")
 
         return graphviz.Source(g_tree.string())
 
@@ -79,12 +92,13 @@ class DecisionTreeStructure:
             self._calculate_leaf_nodes()
 
         leaf_impurity = [(i, self.impurity[i]) for i in range(0, self.node_count) if self.is_leaf[i]]
-        x, y = zip(*leaf_impurity)
+        leaves, impurity = zip(*leaf_impurity)
 
         if figsize:
             plt.figure(figsize=figsize)
-        plt.xticks(range(0, len(x)), x)
-        plt.bar(range(0, len(x)), y, label="leaf impurity")
+        plt.xticks(range(0, len(leaves)), leaves)
+        plt.bar(range(0, len(leaves)), impurity, label="leaf impurity")
+        plt.xlabel("leaf node ids")
         plt.legend()
 
     def show_leaf_samples_distribution(self, bins=10, figsize=None, max_leaf_sample=sys.maxsize):
@@ -133,25 +147,28 @@ class DecisionTreeStructure:
         plt.show()
 
     def show_features_importance(self, figsize=(20, 10)):
-        feature_importances = dict(
-            sorted(list(zip(self.tree.feature_importances_, self.features)), key=lambda tup: tup[0],
-                   reverse=True))
+        feature_names, feature_importances = zip(
+            *sorted(list(zip(self.tree.feature_importances_, self.features)), key=lambda tup: tup[0],
+                    reverse=True))
         plt.figure(figsize=figsize)
-        plt.bar(dict(feature_importances).values(), dict(feature_importances).keys())
+        plt.bar(feature_importances, feature_names)
         plt.grid()
         plt.show()
 
-    def get_leaf_node_count(self):
-        if len(self.is_leaf) == 0:
-            self._calculate_leaf_nodes()
 
-        return sum(self.is_leaf)
+def get_leaf_node_count(self):
+    if len(self.is_leaf) == 0:
+        self._calculate_leaf_nodes()
 
-    def get_split_node_count(self):
-        if len(self.is_leaf) == 0:
-            self._calculate_leaf_nodes()
+    return sum(self.is_leaf)
 
-        return len(self.is_leaf) - sum(self.is_leaf)
 
-    def get_node_count(self):
-        return self.node_count
+def get_split_node_count(self):
+    if len(self.is_leaf) == 0:
+        self._calculate_leaf_nodes()
+
+    return len(self.is_leaf) - sum(self.is_leaf)
+
+
+def get_node_count(self):
+    return self.node_count
