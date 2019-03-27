@@ -132,6 +132,15 @@ class DecisionTreeStructure:
         plt.legend((p0[0], p1[0]), ('class 0', 'class 1'))
         plt.show()
 
+    def show_features_importance(self, figsize=(20, 10)):
+        feature_importances = dict(
+            sorted(list(zip(self.tree.feature_importances_, self.features)), key=lambda tup: tup[0],
+                   reverse=True))
+        plt.figure(figsize=figsize)
+        plt.bar(dict(feature_importances).values(), dict(feature_importances).keys())
+        plt.grid()
+        plt.show()
+
     def get_leaf_node_count(self):
         if len(self.is_leaf) == 0:
             self._calculate_leaf_nodes()
