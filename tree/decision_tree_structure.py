@@ -26,6 +26,7 @@ class DecisionTreeStructure:
         self.value = tree.tree_.value
 
         self.is_leaf = []
+        self.split_nodes = {}
 
     def show_decision_tree_prediction_path(self, sample):
         node_indicator = self.tree.decision_path([sample])
@@ -66,6 +67,50 @@ class DecisionTreeStructure:
 
         return graphviz.Source(g_tree.string())
 
+    def _calculate_split_nodes(self, dataset_training):
+        decision_paths = self.tree.decision_path(dataset_training[self.features]).toarray()
+        for index in dataset_training.index.values:
+            decision_node_path = np.nonzero(decision_paths[index])[0]
+            for node_id in decision_node_path:
+                try:
+                    self.split_nodes[node_id].append(index)
+                except KeyError as ex:
+                    self.split_nodes[node_id] = [index]
+
+    # TODO check impurity with show_leaf_impurity and prediction path because they are not the same
+    def show_decision_tree_splits_prediction(self, train_raw, sample_index, target):
+        if len(self.split_nodes) == 0:
+            self._calculate_split_nodes(train_raw)
+
+        sample = train_raw[self.features].iloc[sample_index]
+
+        print(sample)
+
+        node_indicator = self.tree.decision_path([sample])
+        node_index = node_indicator.indices[node_indicator.indptr[0]:
+                                            node_indicator.indptr[1]]
+
+        for node_id in node_index:
+
+            if self.feature[node_id] < 0:
+                continue
+            if (sample[self.feature[node_id]] <= self.threshold[node_id]):
+                threshold_sign = "<="
+            else:
+                threshold_sign = ">"
+
+            split_sample = train_raw.iloc[self.split_nodes[node_id]]
+            print(
+                f"node id : {node_id}, {self.features[self.feature[node_id]]} {threshold_sign} {self.threshold[node_id]}, sample size {len(split_sample)}, impurity {round(self.impurity[node_id], 2)} ")
+            #             split_sample.hist()
+            split_sample.query(f"{target} == 0")[self.features[self.feature[node_id]]].hist(label=f"{target} 0")
+            split_sample.query(f"{target} == 1")[self.features[self.feature[node_id]]].hist(alpha=0.8,
+                                                                                            label=f"{target} 1")
+            plt.axvline(self.threshold[node_id], c="red",
+                        label=f"{self.features[self.feature[node_id]]} {threshold_sign} {self.threshold[node_id]}")
+            plt.legend()
+            plt.show()
+
     def _calculate_leaf_nodes(self):
         self.is_leaf = np.zeros(shape=self.node_count, dtype=bool)
         stack = [(0)]  # seed is the root node id and its parent depth
@@ -99,6 +144,7 @@ class DecisionTreeStructure:
         plt.xticks(range(0, len(leaves)), leaves)
         plt.bar(range(0, len(leaves)), impurity, label="leaf impurity")
         plt.xlabel("leaf node ids")
+        plt.grid()
         plt.legend()
 
     def show_leaf_samples_distribution(self, bins=10, figsize=None, max_leaf_sample=sys.maxsize):
@@ -121,6 +167,7 @@ class DecisionTreeStructure:
             plt.figure(figsize=figsize)
         plt.xticks(range(0, len(x)), x)
         plt.bar(range(0, len(x)), y, label="leaf samples")
+        plt.grid()
         plt.legend()
 
     def show_leaf_samples_by_class(self, figsize=None, leaf_sample_size=None):
