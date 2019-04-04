@@ -9,7 +9,6 @@ from sklearn import tree as sklearn_tree
 
 # TODO calculate max_depth (is useful when max_depth is not a parameter and we use for ex. min_samples_split = 100
 # TODO add docs to each method
-# TODO add more details to visualisations (like x, y labels)
 
 
 class DecisionTreeStructure:
@@ -32,7 +31,7 @@ class DecisionTreeStructure:
 
     def show_decision_tree_structure(self):
         dot_data = sklearn_tree.export_graphviz(self.tree, out_file=None, feature_names=self.features,
-                                        filled=True, rotate=True, node_ids=True)
+                                                filled=True, rotate=True, node_ids=True)
         return graphviz.Source(dot_data)
 
     def show_decision_tree_prediction_path(self, sample):
@@ -138,6 +137,8 @@ class DecisionTreeStructure:
             plt.figure(figsize=figsize)
         plt.xticks(np.arange(0.0, 1.0, 0.05))
         plt.hist([self.impurity[i] for i in range(0, self.node_count) if self.is_leaf[i]], bins=bins)
+        plt.xlabel("leaf impurity", fontsize=20)
+        plt.ylabel("leaf count", fontsize=20)
 
     def show_leaf_impurity(self, figsize=None):
         if len(self.is_leaf) == 0:
@@ -150,7 +151,8 @@ class DecisionTreeStructure:
             plt.figure(figsize=figsize)
         plt.xticks(range(0, len(leaves)), leaves)
         plt.bar(range(0, len(leaves)), impurity, label="leaf impurity")
-        plt.xlabel("leaf node ids")
+        plt.xlabel("leaf node ids", fontsize=20)
+        plt.ylabel("impurity", fontsize=20)
         plt.grid()
         plt.legend()
 
@@ -162,6 +164,8 @@ class DecisionTreeStructure:
             plt.figure(figsize=figsize)
         plt.hist([self.n_node_samples[i] for i in range(0, self.node_count) if
                   ((self.is_leaf[i]) & (self.n_node_samples[i] < max_leaf_sample))], bins=bins)
+        plt.xlabel("leaf sample", fontsize=20)
+        plt.ylabel("leaf count", fontsize=20)
 
     def show_leaf_samples(self, figsize=None):
         if len(self.is_leaf) == 0:
@@ -174,7 +178,8 @@ class DecisionTreeStructure:
             plt.figure(figsize=figsize)
         plt.xticks(range(0, len(x)), x)
         plt.bar(range(0, len(x)), y, label="leaf samples")
-        plt.xlabel("leaf node ids")
+        plt.xlabel("leaf node ids", size=20)
+        plt.ylabel("samples", size=20)
         plt.grid()
         plt.legend()
 
@@ -198,8 +203,10 @@ class DecisionTreeStructure:
         p1 = plt.bar(range(0, len(index[:leaf_sample_size])), leaf_samples_1[:leaf_sample_size],
                      bottom=leaf_samples_0[:leaf_sample_size])
         plt.xticks(range(0, len(index)), index)
-        plt.legend((p0[0], p1[0]), ('class 0', 'class 1'))
-        plt.show()
+        plt.xlabel("leaf node ids", size=20)
+        plt.ylabel("samples", size=20)
+        plt.legend((p0[0], p1[0]), ('class 0 samples', 'class 1 samples'))
+        # plt.show()
 
     def show_features_importance(self, figsize=(20, 10)):
         feature_names, feature_importances = zip(
@@ -207,6 +214,8 @@ class DecisionTreeStructure:
                     reverse=True))
         plt.figure(figsize=figsize)
         plt.bar(feature_importances, feature_names)
+        plt.xlabel("feature name", fontsize=20)
+        plt.ylabel("feature importance", fontsize=20)
         plt.grid()
         plt.show()
 
