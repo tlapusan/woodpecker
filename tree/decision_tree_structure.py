@@ -4,11 +4,13 @@ import graphviz
 import numpy as np
 import pygraphviz as pgv
 from matplotlib import pyplot as plt
+from sklearn import tree as sklearn_tree
 
 
 # TODO calculate max_depth (is useful when max_depth is not a parameter and we use for ex. min_samples_split = 100
 # TODO add docs to each method
 # TODO add more details to visualisations (like x, y labels)
+
 
 class DecisionTreeStructure:
     def __init__(self, tree, features):
@@ -27,6 +29,11 @@ class DecisionTreeStructure:
 
         self.is_leaf = []
         self.split_nodes = {}
+
+    def show_decision_tree_structure(self):
+        dot_data = sklearn_tree.export_graphviz(self.tree, out_file=None, feature_names=self.features,
+                                        filled=True, rotate=True, node_ids=True)
+        return graphviz.Source(dot_data)
 
     def show_decision_tree_prediction_path(self, sample):
         node_indicator = self.tree.decision_path([sample])
@@ -92,8 +99,8 @@ class DecisionTreeStructure:
 
         for node_id in node_index:
 
-            if self.feature[node_id] < 0:
-                continue
+            # if self.feature[node_id] < 0:
+            #   continue
             if (sample[self.feature[node_id]] <= self.threshold[node_id]):
                 threshold_sign = "<="
             else:
@@ -167,6 +174,7 @@ class DecisionTreeStructure:
             plt.figure(figsize=figsize)
         plt.xticks(range(0, len(x)), x)
         plt.bar(range(0, len(x)), y, label="leaf samples")
+        plt.xlabel("leaf node ids")
         plt.grid()
         plt.legend()
 
