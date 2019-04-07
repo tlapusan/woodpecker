@@ -12,7 +12,100 @@ from sklearn import tree as sklearn_tree
 
 
 class DecisionTreeStructure:
+    """A visual interpretation of decision tree structure.
+
+    It contains two types of visualisations :
+        - visualisations related to leaf nodes
+        - visualisations about tree predictions
+
+    Parameters
+    ----------
+    tree : sklearn.tree.tree.DecisionTreeClassifier
+        The tree to investigate
+
+    features : list
+        The list of features names
+
+    Attributes
+    ----------
+    node_count : int
+        The number of nodes from the tree
+
+    children_left : array of int, shape[node_count]
+        children_left[i] holds the node id of the left child node of node i.
+        For leaves, children_left[i] == TREE_LEAF
+
+    children_right : array of int, shape[node_count]
+        children_right[i] holds the node id of the right child node of node i.
+        For leaves, children_right[i] == TREE_LEAF
+
+    feature : array of int, shape[node_count]
+        feature[i] holds the feature split for node i
+
+    threshold : array of double, shape[node_count]
+        threshold[i] holds the split threshold for node i
+
+    impurity : array of double, shape[node_count]
+        impurity[i] holds the impurity (ex. the value of splitting criterion) for node i
+
+    n_node_samples : array of int, shape[node_count]
+        n_node_samples[i] holds the number of training examples reaching the node i
+
+    weighted_n_node_samples : array of int, shape[node_count]
+        weighted_n_node_samples[i] holds the weighted number of training examples reaching the node i
+
+    value : array of double, shape [node_count, n_outputs, max_n_classes]
+        value[i] holds the prediction value for node i
+
+    is_leaf : array of bool, shape[node_count]
+        is_leaf[i] holds true or false, depending if node i is a leaf or split node
+
+    split_node_samples: array of int, shape[node_count]
+        split_node_samples[i] holds training samples reaching the node i
+
+    Methods
+    -------
+    show_features_importance()
+        Show feature importance ordered by importance
+
+    show_decision_tree_structure()
+        Show decision tree structure as a binary tree.
+
+    show_decision_tree_prediction_path(sample)
+        Show only the decision path, from the whole tree, used for prediction.
+
+    show_decision_tree_splits_prediction()
+        Show the decision path for a specified sample, together with feature space splits
+
+    show_leaf_impurity()
+        Show only the leaf nodes associated with them impurity
+
+    show_leaf_impurity_distribution()
+        Show leaves impurities using a histogram
+
+    show_leaf_samples()
+        Show only the leaf nodes associated with them samples counts
+
+    show_leaf_samples_by_class()
+        Show only the leaf nodes associated with them samples counts, grouped by target class
+
+    show_leaf_samples_distribution()
+        Show leaves samples counts using a histogram
+
+
+
+
+    """
+
     def __init__(self, tree, features):
+        """Initialize necessary information about the tree.
+
+        :param tree : sklearn.tree.tree.DecisionTreeClassifier
+            the tree to investigate
+        :param features : list
+            the list of features names used to train the tree
+        """
+
         self.tree = tree
         self.features = features
 
@@ -27,9 +120,16 @@ class DecisionTreeStructure:
         self.value = tree.tree_.value
 
         self.is_leaf = []
-        self.split_nodes = {}
+        self.split_node_samples = {}
 
     def show_decision_tree_structure(self):
+        """Show decision tree structure as a binary tree.
+
+        It is just an utility class around graphviz functionality to render a decision tree structure.
+
+        :return: graphviz.files.Source
+        """
+
         dot_data = sklearn_tree.export_graphviz(self.tree, out_file=None, feature_names=self.features,
                                                 filled=True, rotate=True, node_ids=True)
         return graphviz.Source(dot_data)
@@ -73,20 +173,20 @@ class DecisionTreeStructure:
 
         return graphviz.Source(g_tree.string())
 
-    def _calculate_split_nodes(self, dataset_training):
+    def _calculate_split_node_samples(self, dataset_training):
         decision_paths = self.tree.decision_path(dataset_training[self.features]).toarray()
         for index in dataset_training.index.values:
             decision_node_path = np.nonzero(decision_paths[index])[0]
             for node_id in decision_node_path:
                 try:
-                    self.split_nodes[node_id].append(index)
+                    self.split_node_samples[node_id].append(index)
                 except KeyError as ex:
-                    self.split_nodes[node_id] = [index]
+                    self.split_node_samples[node_id] = [index]
 
     # TODO check impurity with show_leaf_impurity and prediction path because they are not the same
     def show_decision_tree_splits_prediction(self, train_raw, sample_index, target):
-        if len(self.split_nodes) == 0:
-            self._calculate_split_nodes(train_raw)
+        if len(self.split_node_samples) == 0:
+            self._calculate_split_node_samples(train_raw)
 
         sample = train_raw[self.features].iloc[sample_index]
 
@@ -98,14 +198,16 @@ class DecisionTreeStructure:
 
         for node_id in node_index:
 
+            # FIXME leaf node shows wrong information for feature
             # if self.feature[node_id] < 0:
             #   continue
+
             if (sample[self.feature[node_id]] <= self.threshold[node_id]):
                 threshold_sign = "<="
             else:
                 threshold_sign = ">"
 
-            split_sample = train_raw.iloc[self.split_nodes[node_id]]
+            split_sample = train_raw.iloc[self.split_node_samples[node_id]]
             print(
                 f"node id : {node_id}, {self.features[self.feature[node_id]]} {threshold_sign} {self.threshold[node_id]}, sample size {len(split_sample)}, impurity {round(self.impurity[node_id], 2)} ")
             #             split_sample.hist()
