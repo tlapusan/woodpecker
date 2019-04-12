@@ -9,6 +9,9 @@ from sklearn import tree as sklearn_tree
 
 # TODO calculate max_depth (is useful when max_depth is not a parameter and we use for ex. min_samples_split = 100
 # TODO add docs to each method
+# TODO look at fast.ai random forest feature importance and other
+# TODO ask opinions from other experience people in ML (george ciobanu, cristi lungu, cristi vicas)
+# TODO try the same visualisation for different decision tree structures (ex. max_depth=[3, 5, 10, 20]
 
 
 class DecisionTreeStructure:
@@ -19,7 +22,7 @@ class DecisionTreeStructure:
         - visualisations about tree predictions
 
     Parameters
-    ----------
+    ----------show_leaf_impurity
     tree : sklearn.tree.tree.DecisionTreeClassifier
         The tree to investigate
 
@@ -40,7 +43,7 @@ class DecisionTreeStructure:
         For leaves, children_right[i] == TREE_LEAF
 
     feature : array of int, shape[node_count]
-        feature[i] holds the feature split for node i
+        feature[i] holds the feature index used for split at node i
 
     threshold : array of double, shape[node_count]
         threshold[i] holds the split threshold for node i
@@ -97,17 +100,23 @@ class DecisionTreeStructure:
 
     """
 
-    def __init__(self, tree, features):
+    def __init__(self, tree, train_dataset, features, target):
         """Initialize necessary information about the tree.
 
-        :param tree : sklearn.tree.tree.DecisionTreeClassifier
-            the tree to investigate
-        :param features : list
-            the list of features names used to train the tree
+        :param tree: sklearn.tree.tree.DecisionTreeClassifier
+            The tree to investigate
+        :param train_dataset: pandas.core.frame.DataFrame
+            The training dataset the tree was trained on
+        :param features: array of strings
+            The list of features names used to train the tree
+        :param target: str
+            The name of target variable
         """
 
         self.tree = tree
+        self.train_dataset = train_dataset
         self.features = features
+        self.target = target
 
         self.node_count = tree.tree_.node_count
         self.children_left = tree.tree_.children_left
@@ -125,7 +134,7 @@ class DecisionTreeStructure:
     def show_decision_tree_structure(self):
         """Show decision tree structure as a binary tree.
 
-        It is just an utility class around graphviz functionality to render a decision tree structure.
+        It is just an utility method for graphviz functionality to render a decision tree structure.
 
         :return: graphviz.files.Source
         """
@@ -134,7 +143,43 @@ class DecisionTreeStructure:
                                                 filled=True, rotate=True, node_ids=True)
         return graphviz.Source(dot_data)
 
+    def show_features_importance(self, figsize=(20, 10)):
+        """Visual representation of features importance.
+
+
+        Features are ordered descending by their importance using a bar plot visualisation.
+        oX contains features name and oY contains features importance.
+
+        :param figsize: tuple
+            the size (x, y) of the plot (default is (20, 10))
+        :return: None
+        """
+
+        feature_names, feature_importances = zip(
+            *sorted(list(zip(self.tree.feature_importances_, self.features)), key=lambda tup: tup[0],
+                    reverse=True))
+        plt.figure(figsize=figsize)
+        plt.bar(feature_importances, feature_names)
+        plt.xlabel("feature name", fontsize=20)
+        plt.ylabel("feature importance", fontsize=20)
+        plt.grid()
+        plt.show()
+
     def show_decision_tree_prediction_path(self, sample):
+        """Visual interpretation of prediction path.
+
+        Show only the prediction path from a decision tree, instead of the whole tree.
+        It helps to easily understand and follow the prediction path.
+        The blue nodes are the nodes from prediction path and the black nodes are just blue nodes brothers.
+
+        This kind of visualisation is very useful for debugging and understanding tree predictions.
+        Also it is useful to explain to non technical people the reason behind tree predictions.
+
+        :param sample: array of double, shape[features]
+            The array of features values
+        :return: graphviz.files.Source
+        """
+
         node_indicator = self.tree.decision_path([sample])
         node_index = node_indicator.indices[node_indicator.indptr[0]:
                                             node_indicator.indptr[1]]
@@ -183,14 +228,25 @@ class DecisionTreeStructure:
                 except KeyError as ex:
                     self.split_node_samples[node_id] = [index]
 
-    # TODO check impurity with show_leaf_impurity and prediction path because they are not the same
-    def show_decision_tree_splits_prediction(self, train_raw, sample_index, target):
+    # TODO add feature name for oX axe
+    # TODO histogram do not reflect correctly the values size
+    # TODO it is not clear now with transparency, make them on top ?
+    def show_decision_tree_splits_prediction(self, sample, bins=10, figsize=(10, 5)):
+        """Visual interpretation of features space splits for a specified sample.
+
+        Show feature space splits for the tree nodes involved in prediction path for sample parameter.
+        It is useful to
+
+        :param sample: array of doubles, shape[features]
+            The array of features values
+        :return:
+        """
+
         if len(self.split_node_samples) == 0:
-            self._calculate_split_node_samples(train_raw)
+            self._calculate_split_node_samples(self.train_dataset)
 
-        sample = train_raw[self.features].iloc[sample_index]
-
-        print(sample)
+        print(list(zip(self.features, sample)))
+        print()
 
         node_indicator = self.tree.decision_path([sample])
         node_index = node_indicator.indices[node_indicator.indptr[0]:
@@ -207,15 +263,24 @@ class DecisionTreeStructure:
             else:
                 threshold_sign = ">"
 
-            split_sample = train_raw.iloc[self.split_node_samples[node_id]]
+            split_sample = self.train_dataset.iloc[self.split_node_samples[node_id]]
             print(
-                f"node id : {node_id}, {self.features[self.feature[node_id]]} {threshold_sign} {self.threshold[node_id]}, sample size {len(split_sample)}, impurity {round(self.impurity[node_id], 2)} ")
+                f"nodeId {node_id}, {self.features[self.feature[node_id]]}({sample[self.feature[node_id]]}) {threshold_sign} {self.threshold[node_id]}, sample size {len(split_sample)}, impurity {round(self.impurity[node_id], 2)} ")
             #             split_sample.hist()
-            split_sample.query(f"{target} == 0")[self.features[self.feature[node_id]]].hist(label=f"{target} 0")
-            split_sample.query(f"{target} == 1")[self.features[self.feature[node_id]]].hist(alpha=0.8,
-                                                                                            label=f"{target} 1")
+            print((len(split_sample.query(f"{self.target} == 0")), len(split_sample.query(f"{self.target} == 1"))))
+
+            plt.figure(figsize=figsize)
+            max_range = split_sample[self.features[self.feature[node_id]]].max()
+            min_range = split_sample[self.features[self.feature[node_id]]].min()
+
+            plt.hist(split_sample.query(f"{self.target} == 0")[self.features[self.feature[node_id]]],
+                     label=f"{self.target} 0", bins=bins, range=(min_range, max_range))
+            plt.hist(split_sample.query(f"{self.target} == 1")[self.features[self.feature[node_id]]],
+                     alpha=0.8, label=f"{self.target} 1", bins=bins, range=(min_range, max_range))
             plt.axvline(self.threshold[node_id], c="red",
-                        label=f"{self.features[self.feature[node_id]]} {threshold_sign} {self.threshold[node_id]}")
+                        label=f"{self.features[self.feature[node_id]]} = {self.threshold[node_id]}")
+            plt.xlabel(f"{self.features[self.feature[node_id]]} range of values", fontsize=14)
+            plt.ylabel(f"training examples", fontsize=14)
             plt.legend()
             plt.show()
 
@@ -242,21 +307,26 @@ class DecisionTreeStructure:
         plt.xlabel("leaf impurity", fontsize=20)
         plt.ylabel("leaf count", fontsize=20)
 
-    def show_leaf_impurity(self, figsize=None):
+    def show_leaf_impurity(self, figsize=None, show_type = "plot"):
+        # TODO create a decorator
         if len(self.is_leaf) == 0:
             self._calculate_leaf_nodes()
 
         leaf_impurity = [(i, self.impurity[i]) for i in range(0, self.node_count) if self.is_leaf[i]]
         leaves, impurity = zip(*leaf_impurity)
 
-        if figsize:
-            plt.figure(figsize=figsize)
-        plt.xticks(range(0, len(leaves)), leaves)
-        plt.bar(range(0, len(leaves)), impurity, label="leaf impurity")
-        plt.xlabel("leaf node ids", fontsize=20)
-        plt.ylabel("impurity", fontsize=20)
-        plt.grid()
-        plt.legend()
+        if show_type == "plot":
+            if figsize:
+                plt.figure(figsize=figsize)
+            plt.xticks(range(0, len(leaves)), leaves)
+            plt.bar(range(0, len(leaves)), impurity, label="leaf impurity")
+            plt.xlabel("leaf node ids", fontsize=20)
+            plt.ylabel("impurity", fontsize=20)
+            plt.grid()
+            plt.legend()
+        elif show_type == "text":
+            for leaf, impurity in leaf_impurity:
+                print(leaf, impurity)
 
     def show_leaf_samples_distribution(self, bins=10, figsize=None, max_leaf_sample=sys.maxsize):
         if len(self.is_leaf) == 0:
@@ -309,17 +379,6 @@ class DecisionTreeStructure:
         plt.ylabel("samples", size=20)
         plt.legend((p0[0], p1[0]), ('class 0 samples', 'class 1 samples'))
         # plt.show()
-
-    def show_features_importance(self, figsize=(20, 10)):
-        feature_names, feature_importances = zip(
-            *sorted(list(zip(self.tree.feature_importances_, self.features)), key=lambda tup: tup[0],
-                    reverse=True))
-        plt.figure(figsize=figsize)
-        plt.bar(feature_importances, feature_names)
-        plt.xlabel("feature name", fontsize=20)
-        plt.ylabel("feature importance", fontsize=20)
-        plt.grid()
-        plt.show()
 
 
 def get_leaf_node_count(self):
