@@ -1,3 +1,4 @@
+import logging
 import sys
 
 import graphviz
@@ -6,12 +7,13 @@ import pygraphviz as pgv
 from matplotlib import pyplot as plt
 from sklearn import tree as sklearn_tree
 
-
 # TODO calculate max_depth (is useful when max_depth is not a parameter and we use for ex. min_samples_split = 100
 # TODO add docs to each method
 # TODO look at fast.ai random forest feature importance and other
 # TODO ask opinions from other experience people in ML (george ciobanu, cristi lungu, cristi vicas)
 # TODO try the same visualisation for different decision tree structures (ex. max_depth=[3, 5, 10, 20]
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
 
 
 class DecisionTreeStructure:
@@ -94,10 +96,6 @@ class DecisionTreeStructure:
 
     show_leaf_samples_distribution()
         Show leaves samples counts using a histogram
-
-
-
-
     """
 
     def __init__(self, tree, train_dataset, features, target):
@@ -165,6 +163,19 @@ class DecisionTreeStructure:
         plt.grid()
         plt.show()
 
+    def _get_node_path_info(self, node_id, sample):
+        if sample[self.feature[node_id]] <= self.threshold[node_id]:
+            threshold_sign = "<="
+        else:
+            threshold_sign = ">"
+
+        return f"Node {node_id} \n" \
+               f" {self.features[self.feature[node_id]]} {threshold_sign} {self.threshold[node_id]} \n" \
+               f" samples {self.n_node_samples[node_id]} \n" \
+               f" weighted sample {round(self.weighted_n_node_samples[node_id], 1)} \n " \
+               f"values {self.value[node_id][0]}, \n " \
+               f"impurity {round(self.impurity[node_id], 2)}"
+
     def show_decision_tree_prediction_path(self, sample):
         """Visual interpretation of prediction path.
 
@@ -180,40 +191,42 @@ class DecisionTreeStructure:
         :return: graphviz.files.Source
         """
 
+        logging.info(f"Make a prediction for sample {sample}")
+
         node_indicator = self.tree.decision_path([sample])
-        node_index = node_indicator.indices[node_indicator.indptr[0]:
-                                            node_indicator.indptr[1]]
+        decision_node_path = node_indicator.indices[node_indicator.indptr[0]:
+                                                    node_indicator.indptr[1]]
+        logging.info(f"decision path {decision_node_path}")
+
         g_tree = pgv.AGraph(strict=False, directed=True)
         g_tree.layout(prog='dot')
-
-        for i in range(0, len(node_index)):
-
-            node_id = node_index[i]
-
-            if sample[self.feature[node_id]] <= self.threshold[node_id]:
-                threshold_sign = "<="
-            else:
-                threshold_sign = ">"
+        for i in range(0, len(decision_node_path)):
+            node_id = decision_node_path[i]
 
             # TODO round(self.value[node_id][0][0], 2) for regression tree
-            g_tree.add_node(node_id, color="blue",
-                            label=f"Node {node_id} \n {self.features[self.feature[node_id]]} {threshold_sign} {self.threshold[node_id]} \n samples {self.n_node_samples[node_id]} \n weighted sample {round(self.weighted_n_node_samples[node_id], 1)} \n values {self.value[node_id][0]}, \n impurity {round(self.impurity[node_id], 2)}",
-                            fontsize=10, center=True, shape="ellipse")
+            g_tree.add_node(node_id, color="blue", label=self._get_node_path_info(node_id, sample), fontsize=10,
+                            center=True, shape="ellipse")
 
+            # check if node_id is not a leaf
             if self.children_left[node_id] != -1:
                 g_tree.add_edge(node_id, self.children_left[node_id])
 
-                if self.children_left[node_id] != node_index[i + 1]:
+                # check if children_left[node_id] is not from the path and plot the node with black (neighbor node)
+                if self.children_left[node_id] != decision_node_path[i + 1]:
                     left_node_id = self.children_left[node_id]
                     g_tree.add_node(left_node_id,
-                                    label=f"Node {left_node_id} \n feature split {self.features[self.feature[left_node_id]]} \n samples {self.n_node_samples[left_node_id]} \n values {self.value[left_node_id][0]}, \n impurity {round(self.impurity[left_node_id], 2)} ",
+                                    label=f"Node {left_node_id} \n split by {self.features[self.feature[left_node_id]]} \n samples {self.n_node_samples[left_node_id]} \n values {self.value[left_node_id][0]}, \n impurity {round(self.impurity[left_node_id], 2)} ",
                                     fontsize=10, center=True, shape="ellipse")
+
+            # check if node_id is not a leaf
             if self.children_right[node_id] != -1:
                 g_tree.add_edge(node_id, self.children_right[node_id])
-                if self.children_right[node_id] != node_index[i + 1]:
+
+                # check if children_right[node_id] is not from the path and plot the node with black (neighbor node)
+                if self.children_right[node_id] != decision_node_path[i + 1]:
                     right_node_id = self.children_right[node_id]
                     g_tree.add_node(right_node_id,
-                                    label=f"Node {right_node_id} \n feature split {self.features[self.feature[right_node_id]]} \n samples {self.n_node_samples[right_node_id]} \n values {self.value[right_node_id][0]}, \n impurity {round(self.impurity[right_node_id], 2)} ",
+                                    label=f"Node {right_node_id} \n split by {self.features[self.feature[right_node_id]]} \n samples {self.n_node_samples[right_node_id]} \n values {self.value[right_node_id][0]}, \n impurity {round(self.impurity[right_node_id], 2)} ",
                                     fontsize=10, center=True, shape="ellipse")
 
         return graphviz.Source(g_tree.string())
@@ -307,7 +320,7 @@ class DecisionTreeStructure:
         plt.xlabel("leaf impurity", fontsize=20)
         plt.ylabel("leaf count", fontsize=20)
 
-    def show_leaf_impurity(self, figsize=None, show_type = "plot"):
+    def show_leaf_impurity(self, figsize=None, show_type="plot"):
         # TODO create a decorator
         if len(self.is_leaf) == 0:
             self._calculate_leaf_nodes()
