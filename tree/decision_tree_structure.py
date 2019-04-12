@@ -163,20 +163,21 @@ class DecisionTreeStructure:
         plt.grid()
         plt.show()
 
-    def _get_node_path_info(self, node_id, sample):
+    def _get_node_path_info(self, node_id, sample, is_weighted):
         if sample[self.feature[node_id]] <= self.threshold[node_id]:
             threshold_sign = "<="
         else:
             threshold_sign = ">"
 
+        newline = "\n"
         return f"Node {node_id} \n" \
-               f" {self.features[self.feature[node_id]]} {threshold_sign} {self.threshold[node_id]} \n" \
+               f" {self.features[self.feature[node_id]]} {threshold_sign} {round(self.threshold[node_id], 2)} \n" \
                f" samples {self.n_node_samples[node_id]} \n" \
-               f" weighted sample {round(self.weighted_n_node_samples[node_id], 1)} \n " \
+               f" {'weighted sample ' + str(round(self.weighted_n_node_samples[node_id], 1)) + newline if is_weighted else ''}" \
                f"values {self.value[node_id][0]}, \n " \
                f"impurity {round(self.impurity[node_id], 2)}"
 
-    def show_decision_tree_prediction_path(self, sample):
+    def show_decision_tree_prediction_path(self, sample, is_weighted=False):
         """Visual interpretation of prediction path.
 
         Show only the prediction path from a decision tree, instead of the whole tree.
@@ -204,7 +205,8 @@ class DecisionTreeStructure:
             node_id = decision_node_path[i]
 
             # TODO round(self.value[node_id][0][0], 2) for regression tree
-            g_tree.add_node(node_id, color="blue", label=self._get_node_path_info(node_id, sample), fontsize=10,
+            g_tree.add_node(node_id, color="blue", label=self._get_node_path_info(node_id, sample, is_weighted),
+                            fontsize=10,
                             center=True, shape="ellipse")
 
             # check if node_id is not a leaf
@@ -214,9 +216,9 @@ class DecisionTreeStructure:
                 # check if children_left[node_id] is not from the path and plot the node with black (neighbor node)
                 if self.children_left[node_id] != decision_node_path[i + 1]:
                     left_node_id = self.children_left[node_id]
-                    g_tree.add_node(left_node_id,
-                                    label=f"Node {left_node_id} \n split by {self.features[self.feature[left_node_id]]} \n samples {self.n_node_samples[left_node_id]} \n values {self.value[left_node_id][0]}, \n impurity {round(self.impurity[left_node_id], 2)} ",
-                                    fontsize=10, center=True, shape="ellipse")
+                    g_tree.add_node(left_node_id, label=self._get_node_path_info(left_node_id, sample, is_weighted),
+                                    fontsize=10,
+                                    center=True, shape="ellipse")
 
             # check if node_id is not a leaf
             if self.children_right[node_id] != -1:
@@ -225,9 +227,9 @@ class DecisionTreeStructure:
                 # check if children_right[node_id] is not from the path and plot the node with black (neighbor node)
                 if self.children_right[node_id] != decision_node_path[i + 1]:
                     right_node_id = self.children_right[node_id]
-                    g_tree.add_node(right_node_id,
-                                    label=f"Node {right_node_id} \n split by {self.features[self.feature[right_node_id]]} \n samples {self.n_node_samples[right_node_id]} \n values {self.value[right_node_id][0]}, \n impurity {round(self.impurity[right_node_id], 2)} ",
-                                    fontsize=10, center=True, shape="ellipse")
+                    g_tree.add_node(right_node_id, label=self._get_node_path_info(right_node_id, sample, is_weighted),
+                                    fontsize=10,
+                                    center=True, shape="ellipse")
 
         return graphviz.Source(g_tree.string())
 
