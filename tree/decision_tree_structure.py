@@ -11,8 +11,7 @@ from sklearn import tree as sklearn_tree
 # TODO add docs to each method
 # TODO look at fast.ai random forest feature importance and other
 # TODO ask opinions from other experience people in ML (george ciobanu, cristi lungu, cristi vicas)
-# TODO try the same visualisation for different decision tree structures (ex. max_depth=[3, 5, 10, 20]
-
+# TODO make leaf (impurity and samples) visualisations / tree level (would help to see these stats to see where the leaves are in the tree)
 logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
 
 
@@ -112,7 +111,7 @@ class DecisionTreeStructure:
         """
 
         self.tree = tree
-        self.train_dataset = train_dataset
+        self.train_dataset = train_dataset.reset_index(drop=True)
         self.features = features
         self.target = target
 
@@ -129,7 +128,7 @@ class DecisionTreeStructure:
         self.is_leaf = []
         self.split_node_samples = {}
 
-    def show_decision_tree_structure(self):
+    def show_decision_tree_structure(self, rotate=True):
         """Show decision tree structure as a binary tree.
 
         It is just an utility method for graphviz functionality to render a decision tree structure.
@@ -138,7 +137,7 @@ class DecisionTreeStructure:
         """
 
         dot_data = sklearn_tree.export_graphviz(self.tree, out_file=None, feature_names=self.features,
-                                                filled=True, rotate=True, node_ids=True)
+                                                filled=True, rotate=rotate, node_ids=True)
         return graphviz.Source(dot_data)
 
     def show_features_importance(self, figsize=(20, 10)):
@@ -164,14 +163,18 @@ class DecisionTreeStructure:
         plt.show()
 
     def _get_node_path_info(self, node_id, sample, is_weighted):
-        if sample[self.feature[node_id]] <= self.threshold[node_id]:
+        if len(self.is_leaf) == 0:
+            self._calculate_leaf_nodes()
+
+        sample_value = round(sample[self.feature[node_id]], 2)
+        if sample_value <= self.threshold[node_id]:
             threshold_sign = "<="
         else:
             threshold_sign = ">"
 
         newline = "\n"
         return f"Node {node_id} \n" \
-               f" {self.features[self.feature[node_id]]} {threshold_sign} {round(self.threshold[node_id], 2)} \n" \
+               f"{self.features[self.feature[node_id]] + '(' + str(sample[self.feature[node_id]]) + ') ' +  threshold_sign + ' ' + str(round(self.threshold[node_id], 2)) + newline if not self.is_leaf[node_id] else ''}" \
                f" samples {self.n_node_samples[node_id]} \n" \
                f" {'weighted sample ' + str(round(self.weighted_n_node_samples[node_id], 1)) + newline if is_weighted else ''}" \
                f"values {self.value[node_id][0]}, \n " \
@@ -235,6 +238,7 @@ class DecisionTreeStructure:
 
     def _calculate_split_node_samples(self, dataset_training):
         decision_paths = self.tree.decision_path(dataset_training[self.features]).toarray()
+        logging.info(f"decision paths {decision_paths} ")
         for index in dataset_training.index.values:
             decision_node_path = np.nonzero(decision_paths[index])[0]
             for node_id in decision_node_path:
@@ -243,8 +247,17 @@ class DecisionTreeStructure:
                 except KeyError as ex:
                     self.split_node_samples[node_id] = [index]
 
-    # TODO add feature name for oX axe
-    # TODO histogram do not reflect correctly the values size
+    def get_node_samples(self, node_id):
+        """
+
+        :param node_id:
+        :return:
+        """
+        if len(self.split_node_samples) == 0:
+            self._calculate_split_node_samples(self.train_dataset)
+
+        return self.train_dataset.iloc[self.split_node_samples[node_id]]
+
     # TODO it is not clear now with transparency, make them on top ?
     def show_decision_tree_splits_prediction(self, sample, bins=10, figsize=(10, 5)):
         """Visual interpretation of features space splits for a specified sample.
@@ -260,6 +273,9 @@ class DecisionTreeStructure:
         if len(self.split_node_samples) == 0:
             self._calculate_split_node_samples(self.train_dataset)
 
+        if len(self.is_leaf) == 0:
+            self._calculate_leaf_nodes()
+
         print(list(zip(self.features, sample)))
         print()
 
@@ -269,7 +285,7 @@ class DecisionTreeStructure:
 
         for node_id in node_index:
 
-            # FIXME leaf node shows wrong information for feature
+            # TODO leaf node shows wrong information for feature
             # if self.feature[node_id] < 0:
             #   continue
 
@@ -279,10 +295,13 @@ class DecisionTreeStructure:
                 threshold_sign = ">"
 
             split_sample = self.train_dataset.iloc[self.split_node_samples[node_id]]
-            print(
-                f"nodeId {node_id}, {self.features[self.feature[node_id]]}({sample[self.feature[node_id]]}) {threshold_sign} {self.threshold[node_id]}, sample size {len(split_sample)}, impurity {round(self.impurity[node_id], 2)} ")
-            #             split_sample.hist()
-            print((len(split_sample.query(f"{self.target} == 0")), len(split_sample.query(f"{self.target} == 1"))))
+
+            if self.is_leaf[node_id]:
+                print(
+                    f"Node {node_id}, sample size {len(split_sample)} ({len(split_sample.query(f'{self.target} == 0'))}/{len(split_sample.query(f'{self.target} == 1'))}), impurity {round(self.impurity[node_id], 2)} ")
+            else:
+                print(
+                    f"Node {node_id}, {self.features[self.feature[node_id]]}({sample[self.feature[node_id]]}) {threshold_sign} {self.threshold[node_id]}, sample size {len(split_sample)} ({len(split_sample.query(f'{self.target} == 0'))}/{len(split_sample.query(f'{self.target} == 1'))}), impurity {round(self.impurity[node_id], 2)} ")
 
             plt.figure(figsize=figsize)
             max_range = split_sample[self.features[self.feature[node_id]]].max()
@@ -292,10 +311,13 @@ class DecisionTreeStructure:
                      label=f"{self.target} 0", bins=bins, range=(min_range, max_range))
             plt.hist(split_sample.query(f"{self.target} == 1")[self.features[self.feature[node_id]]],
                      alpha=0.8, label=f"{self.target} 1", bins=bins, range=(min_range, max_range))
-            plt.axvline(self.threshold[node_id], c="red",
-                        label=f"{self.features[self.feature[node_id]]} = {self.threshold[node_id]}")
+
+            if not self.is_leaf[node_id]:
+                plt.axvline(self.threshold[node_id], c="red",
+                            label=f"{self.features[self.feature[node_id]]} = {self.threshold[node_id]}")
+
             plt.xlabel(f"{self.features[self.feature[node_id]]} range of values", fontsize=14)
-            plt.ylabel(f"training examples", fontsize=14)
+            plt.ylabel(f"node examples", fontsize=14)
             plt.legend()
             plt.show()
 
@@ -322,7 +344,7 @@ class DecisionTreeStructure:
         plt.xlabel("leaf impurity", fontsize=20)
         plt.ylabel("leaf count", fontsize=20)
 
-    def show_leaf_impurity(self, figsize=None, show_type="plot"):
+    def show_leaf_impurity(self, figsize=None, display_type="plot"):
         # TODO create a decorator
         if len(self.is_leaf) == 0:
             self._calculate_leaf_nodes()
@@ -330,7 +352,7 @@ class DecisionTreeStructure:
         leaf_impurity = [(i, self.impurity[i]) for i in range(0, self.node_count) if self.is_leaf[i]]
         leaves, impurity = zip(*leaf_impurity)
 
-        if show_type == "plot":
+        if display_type == "plot":
             if figsize:
                 plt.figure(figsize=figsize)
             plt.xticks(range(0, len(leaves)), leaves)
@@ -339,7 +361,7 @@ class DecisionTreeStructure:
             plt.ylabel("impurity", fontsize=20)
             plt.grid()
             plt.legend()
-        elif show_type == "text":
+        elif display_type == "text":
             for leaf, impurity in leaf_impurity:
                 print(leaf, impurity)
 
@@ -354,21 +376,25 @@ class DecisionTreeStructure:
         plt.xlabel("leaf sample", fontsize=20)
         plt.ylabel("leaf count", fontsize=20)
 
-    def show_leaf_samples(self, figsize=None):
+    def show_leaf_samples(self, figsize=None, display_type="plot"):
         if len(self.is_leaf) == 0:
             self._calculate_leaf_nodes()
 
-        leaf_impurity = [(i, self.n_node_samples[i]) for i in range(0, self.node_count) if self.is_leaf[i]]
-        x, y = zip(*leaf_impurity)
+        leaf_samples = [(i, self.n_node_samples[i]) for i in range(0, self.node_count) if self.is_leaf[i]]
+        x, y = zip(*leaf_samples)
 
-        if figsize:
-            plt.figure(figsize=figsize)
-        plt.xticks(range(0, len(x)), x)
-        plt.bar(range(0, len(x)), y, label="leaf samples")
-        plt.xlabel("leaf node ids", size=20)
-        plt.ylabel("samples", size=20)
-        plt.grid()
-        plt.legend()
+        if display_type == "plot":
+            if figsize:
+                plt.figure(figsize=figsize)
+            plt.xticks(range(0, len(x)), x)
+            plt.bar(range(0, len(x)), y, label="leaf samples")
+            plt.xlabel("leaf node ids", size=20)
+            plt.ylabel("samples", size=20)
+            plt.grid()
+            plt.legend()
+        elif display_type == "text":
+            for leaf, samples in leaf_samples:
+                print(leaf, samples)
 
     def show_leaf_samples_by_class(self, figsize=None, leaf_sample_size=None):
         """
@@ -392,23 +418,21 @@ class DecisionTreeStructure:
         plt.xticks(range(0, len(index)), index)
         plt.xlabel("leaf node ids", size=20)
         plt.ylabel("samples", size=20)
+        plt.grid()
         plt.legend((p0[0], p1[0]), ('class 0 samples', 'class 1 samples'))
         # plt.show()
 
+    def get_leaf_node_count(self):
+        if len(self.is_leaf) == 0:
+            self._calculate_leaf_nodes()
 
-def get_leaf_node_count(self):
-    if len(self.is_leaf) == 0:
-        self._calculate_leaf_nodes()
+        return sum(self.is_leaf)
 
-    return sum(self.is_leaf)
+    def get_split_node_count(self):
+        if len(self.is_leaf) == 0:
+            self._calculate_leaf_nodes()
 
+        return len(self.is_leaf) - sum(self.is_leaf)
 
-def get_split_node_count(self):
-    if len(self.is_leaf) == 0:
-        self._calculate_leaf_nodes()
-
-    return len(self.is_leaf) - sum(self.is_leaf)
-
-
-def get_node_count(self):
-    return self.node_count
+    def get_node_count(self):
+        return self.node_count
