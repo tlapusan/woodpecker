@@ -284,12 +284,7 @@ class DecisionTreeStructure:
                                             node_indicator.indptr[1]]
 
         for node_id in node_index:
-
-            # TODO leaf node shows wrong information for feature
-            # if self.feature[node_id] < 0:
-            #   continue
-
-            if (sample[self.feature[node_id]] <= self.threshold[node_id]):
+            if sample[self.feature[node_id]] <= self.threshold[node_id]:
                 threshold_sign = "<="
             else:
                 threshold_sign = ">"
