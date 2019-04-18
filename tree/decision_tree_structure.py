@@ -1,5 +1,4 @@
 import logging
-import sys
 
 import graphviz
 import numpy as np
@@ -7,11 +6,7 @@ import pygraphviz as pgv
 from matplotlib import pyplot as plt
 from sklearn import tree as sklearn_tree
 
-# TODO calculate max_depth (is useful when max_depth is not a parameter and we use for ex. min_samples_split = 100
 # TODO add docs to each method
-# TODO look at fast.ai random forest feature importance and other
-# TODO ask opinions from other experience people in ML (george ciobanu, cristi lungu, cristi vicas)
-# TODO make leaf (impurity and samples) visualisations / tree level (would help to see these stats to see where the leaves are in the tree)
 logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
 
 
@@ -190,6 +185,8 @@ class DecisionTreeStructure:
         This kind of visualisation is very useful for debugging and understanding tree predictions.
         Also it is useful to explain to non technical people the reason behind tree predictions.
 
+        :param is_weighted: boolean
+            Whether or not to include weighted number of training samples reaching node i.
         :param sample: array of double, shape[features]
             The array of features values
         :return: graphviz.files.Source
@@ -207,7 +204,6 @@ class DecisionTreeStructure:
         for i in range(0, len(decision_node_path)):
             node_id = decision_node_path[i]
 
-            # TODO round(self.value[node_id][0][0], 2) for regression tree
             g_tree.add_node(node_id, color="blue", label=self._get_node_path_info(node_id, sample, is_weighted),
                             fontsize=10,
                             center=True, shape="ellipse")
@@ -248,11 +244,13 @@ class DecisionTreeStructure:
                     self.split_node_samples[node_id] = [index]
 
     def get_node_samples(self, node_id):
+        """Create a dataframe containing all training samples reaching node_id.
+
+        :param node_id: int
+            The id of node_id
+        :return: pandas.DataFrame
         """
 
-        :param node_id:
-        :return:
-        """
         if len(self.split_node_samples) == 0:
             self._calculate_split_node_samples(self.train_dataset)
 
@@ -265,9 +263,12 @@ class DecisionTreeStructure:
         Show feature space splits for the tree nodes involved in prediction path for sample parameter.
         It is useful to
 
+        :param figsize: tuple of int
+            The figure size to be displayed
+        :param bins: int
+            Number of bins from histogram
         :param sample: array of doubles, shape[features]
             The array of features values
-        :return:
         """
 
         if len(self.split_node_samples) == 0:
@@ -329,6 +330,14 @@ class DecisionTreeStructure:
                 self.is_leaf[node_id] = True
 
     def show_leaf_impurity_distribution(self, bins=10, figsize=None):
+        """ Visualize distribution of leaves impurities
+
+        :param bins: int
+            Number of bins of histograms
+        :param figsize: tuple of int
+            The figure size to be displayed
+        """
+
         if len(self.is_leaf) == 0:
             self._calculate_leaf_nodes()
 
@@ -340,6 +349,18 @@ class DecisionTreeStructure:
         plt.ylabel("leaf count", fontsize=20)
 
     def show_leaf_impurity(self, figsize=None, display_type="plot"):
+        """Show impurity for each leaf.
+
+        If display_type = 'plot' it will show leaves impurities using a plot.
+        If display_type = 'text' it will show leaves impurities as text. This method is preferred if number
+        of leaves is very large and we cannot determine clearly the leaves from the plot.
+
+        :param figsize: tuple of int
+            The plot size
+        :param display_type: str, optional
+            'plot' or 'text'
+        """
+
         # TODO create a decorator
         if len(self.is_leaf) == 0:
             self._calculate_leaf_nodes()
@@ -360,18 +381,37 @@ class DecisionTreeStructure:
             for leaf, impurity in leaf_impurity:
                 print(leaf, impurity)
 
-    def show_leaf_samples_distribution(self, bins=10, figsize=None, max_leaf_sample=sys.maxsize):
+    def show_leaf_samples_distribution(self, bins=10, figsize=None):
+        """ Visualize distribution of leaves samples.
+
+        :param bins: int
+            Number of bins of histograms
+        :param figsize: tuple of int
+            The figure size to be displayed
+        """
+
         if len(self.is_leaf) == 0:
             self._calculate_leaf_nodes()
 
         if figsize:
             plt.figure(figsize=figsize)
-        plt.hist([self.n_node_samples[i] for i in range(0, self.node_count) if
-                  ((self.is_leaf[i]) & (self.n_node_samples[i] < max_leaf_sample))], bins=bins)
+        plt.hist([self.n_node_samples[i] for i in range(0, self.node_count) if self.is_leaf[i]], bins=bins)
         plt.xlabel("leaf sample", fontsize=20)
         plt.ylabel("leaf count", fontsize=20)
 
     def show_leaf_samples(self, figsize=None, display_type="plot"):
+        """Show samples for each leaf.
+
+        If display_type = 'plot' it will show leaves samples using a plot.
+        If display_type = 'text' it will show leaves samples as text. This method is preferred if number
+        of leaves is very large and we cannot determine clearly the leaves from the plot.
+
+        :param figsize: tuple of int
+            The plot size
+        :param display_type: str, optional
+            'plot' or 'text'
+        """
+
         if len(self.is_leaf) == 0:
             self._calculate_leaf_nodes()
 
@@ -392,9 +432,12 @@ class DecisionTreeStructure:
                 print(leaf, samples)
 
     def show_leaf_samples_by_class(self, figsize=None, leaf_sample_size=None):
+        """Show samples by class for each leaf.
+        
+        :param figsize: tuple of int
+            The plot size
         """
-        For now only for binary classification
-        """
+
         if len(self.is_leaf) == 0:
             self._calculate_leaf_nodes()
 
@@ -415,19 +458,36 @@ class DecisionTreeStructure:
         plt.ylabel("samples", size=20)
         plt.grid()
         plt.legend((p0[0], p1[0]), ('class 0 samples', 'class 1 samples'))
-        # plt.show()
 
     def get_leaf_node_count(self):
+        """Get number of leaves from the tree
+        
+        :return: int
+            Number of leaves
+        """
+
         if len(self.is_leaf) == 0:
             self._calculate_leaf_nodes()
 
         return sum(self.is_leaf)
 
     def get_split_node_count(self):
+        """Get number of split nodes from the tree
+        
+        :return: int
+            Number of split nodes 
+        """
+
         if len(self.is_leaf) == 0:
             self._calculate_leaf_nodes()
 
         return len(self.is_leaf) - sum(self.is_leaf)
 
     def get_node_count(self):
+        """Get total number of nodes from the tree
+        
+        :return: int
+            Total number of nodes
+        """
+        
         return self.node_count
