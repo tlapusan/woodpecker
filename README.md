@@ -23,7 +23,7 @@ features = ["Pclass", "Age", "Fare", "Sex_label", "Cabin_label", "Embarked_label
 target = "Survived" 
 
 Let see some descriptive statistics about training set. <br> 
-![](https://github.com/tlapusan/woodpecker/blob/version_0.1/resources/docs/images/classification/titanic_train_describe.png =250x250)
+![](https://github.com/tlapusan/woodpecker/blob/version_0.1/resources/docs/images/classification/titanic_train_describe.png)
    
 ### Train the model 
 model = DecisionTreeClassifier(criterion="entropy", random_state=random_state, min_samples_split=20)
@@ -40,7 +40,7 @@ to map them to feature names and to sort them.
 Now, you just type this simple utility function. 
 
 dts.show_features_importance()
-![](https://github.com/tlapusan/woodpecker/blob/version_0.1/resources/docs/images/classification/feature_importance.png =250x250)
+![](https://github.com/tlapusan/woodpecker/blob/version_0.1/resources/docs/images/classification/feature_importance.png)
 
 #### Visualize decision tree structure 
 
@@ -48,7 +48,7 @@ Like in the above case, this function is also an utility function what
 wrap all the code needed to visualize decision tree structure using graphviz.
 
 dts.show_decision_tree_structure()
-![](https://github.com/tlapusan/woodpecker/blob/version_0.1/resources/docs/images/classification/decision_tree_structure.png =250x250)
+![](https://github.com/tlapusan/woodpecker/blob/version_0.1/resources/docs/images/classification/decision_tree_structure.png)
 
 #### Leaves impurity distribution
 
@@ -60,7 +60,7 @@ The tree performance is directly influenced by each leaf performance. So it's ve
 overview of how leaves impurity looks.
 
 dts.show_leaf_impurity_distribution(bins=40, figsize=(20, 7))
-![](https://github.com/tlapusan/woodpecker/blob/version_0.1/resources/docs/images/classification/leaves_impurity_distribution.png =250x250)
+![](https://github.com/tlapusan/woodpecker/blob/version_0.1/resources/docs/images/classification/leaves_impurity_distribution.png)
 
 
 
