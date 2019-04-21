@@ -62,6 +62,36 @@ overview of how leaves impurity looks.
 dts.show_leaf_impurity_distribution(bins=40, figsize=(20, 7))
 ![](https://github.com/tlapusan/woodpecker/blob/version_0.1/resources/docs/images/classification/leaves_impurity_distribution.png)
 
+#### Leaves sample distribution
+
+Sample is a metrics which shows how many examples from training set reached that node. <br>
+For a leaf is ideal to have an impurity very close to 0, but it's also equally important 
+to have a significant set of samples reaching that leaf. If the set of samples is very small, could be a sign 
+of outfitting for the leaf.
+
+That's why is important to look both at leaves impurity and samples to get a better understanding of tree performance.
+
+dts.show_leaf_samples_distribution(bins=40, figsize=(20, 7))
+![](https://github.com/tlapusan/woodpecker/blob/version_0.1/resources/docs/images/classification/leaves_sample_distribution.png)
+
+#### Individual leaves metrics
+
+There could be the case when we want to investigate individual leaf behavior. <br>
+We could analyze leaves with very good, medium or very low performance.  
+
+
+plt.figure(figsize=(40,30))
+plt.subplot(3,1,1)
+dts.show_leaf_impurity()
+
+plt.subplot(3,1,2)
+dts.show_leaf_samples()
+
+plt.subplot(3,1,3)
+dts.show_leaf_samples_by_class()
+
+![](https://github.com/tlapusan/woodpecker/blob/version_0.1/resources/docs/images/classification/leaves_metrics.png)
+
 
 
 
