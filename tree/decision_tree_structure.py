@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
 
 
 class DecisionTreeStructure:
-    """A visual interpretation of decision tree structure.
+    """A visual interpretation of decision tree structure. Only for classification for the moment.
 
     It contains two types of visualisations :
         - visualisations related to leaf nodes
