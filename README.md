@@ -19,19 +19,20 @@ This library was developed with two main ideas in mind :
 ### Training example
 The well known [titanic dataset](https://www.kaggle.com/c/titanic/data) was chosen to show library capabilities.
 
-features = ["Pclass", "Age", "Fare", "Sex_label", "Cabin_label", "Embarked_label"] <br>
-target = "Survived" 
+> features = ["Pclass", "Age", "Fare", "Sex_label", "Cabin_label", "Embarked_label"] <br>
+> target = "Survived" 
 
 Let see some descriptive statistics about training set. <br> 
+> train[features].describe() <br>
 ![](https://github.com/tlapusan/woodpecker/blob/version_0.1/resources/docs/images/classification/titanic_train_describe.png)
    
 ### Train the model 
-model = DecisionTreeClassifier(criterion="entropy", random_state=random_state, min_samples_split=20)
-model.fit(train[features], train[target])
+> model = DecisionTreeClassifier(criterion="entropy", random_state=random_state, min_samples_split=20)
+> model.fit(train[features], train[target])
 
 ### Start using the library
 
-dts = DecisionTreeStructure(model, train, features, target)
+> dts = DecisionTreeStructure(model, train, features, target)
 
 #### Visualize feature importance
 
@@ -39,7 +40,7 @@ You don't have type all the code needed to extract feature importance,
 to map them to feature names and to sort them.
 Now, you just type this simple utility function. 
 
-dts.show_features_importance()
+> dts.show_features_importance() <br>
 ![](https://github.com/tlapusan/woodpecker/blob/version_0.1/resources/docs/images/classification/feature_importance.png)
 
 #### Visualize decision tree structure 
@@ -47,7 +48,7 @@ dts.show_features_importance()
 Like in the above case, this function is also an utility function what 
 wrap all the code needed to visualize decision tree structure using graphviz.
 
-dts.show_decision_tree_structure()
+> dts.show_decision_tree_structure() <br>
 ![](https://github.com/tlapusan/woodpecker/blob/version_0.1/resources/docs/images/classification/decision_tree_structure.png)
 
 #### Leaves impurity distribution
@@ -59,7 +60,7 @@ In case of entropy, impurity is a range of values between 0 and 1.
 The tree performance is directly influenced by each leaf performance. So it's very important to have a general 
 overview of how leaves impurity looks.
 
-dts.show_leaf_impurity_distribution(bins=40, figsize=(20, 7))
+> dts.show_leaf_impurity_distribution(bins=40, figsize=(20, 7)) <br>
 ![](https://github.com/tlapusan/woodpecker/blob/version_0.1/resources/docs/images/classification/leaves_impurity_distribution.png)
 
 #### Leaves sample distribution
@@ -71,7 +72,7 @@ of outfitting for the leaf.
 
 That's why is important to look both at leaves impurity and samples to get a better understanding of tree performance.
 
-dts.show_leaf_samples_distribution(bins=40, figsize=(20, 7))
+> dts.show_leaf_samples_distribution(bins=40, figsize=(20, 7)) <br>
 ![](https://github.com/tlapusan/woodpecker/blob/version_0.1/resources/docs/images/classification/leaves_sample_distribution.png)
 
 #### Individual leaves metrics
@@ -80,15 +81,15 @@ There could be the case when we want to investigate individual leaf behavior. <b
 We could analyze leaves with very good, medium or very low performance.  
 
 
-plt.figure(figsize=(40,30))
-plt.subplot(3,1,1)
-dts.show_leaf_impurity()
+> plt.figure(figsize=(40,30)) <br>
+> plt.subplot(3,1,1) <br>
+> dts.show_leaf_impurity() <br>
 
-plt.subplot(3,1,2)
-dts.show_leaf_samples()
+> plt.subplot(3,1,2) <br>
+> dts.show_leaf_samples()
 
-plt.subplot(3,1,3)
-dts.show_leaf_samples_by_class()
+> plt.subplot(3,1,3)
+> dts.show_leaf_samples_by_class()
 
 ![](https://github.com/tlapusan/woodpecker/blob/version_0.1/resources/docs/images/classification/leaves_metrics.png)
 
