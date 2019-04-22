@@ -158,11 +158,3 @@ email : tudor.lapusan@gmail.com
 # License
 This project is licensed under the terms of the MIT license, see LICENSE.
 
- 
-
-
-TODO
-- visualize decision path
-- visualize node/leaf impurity (as matplolib)
-- visualize node/leaf samples
-- visualize decision path, leaf, all nodes splits (ex. histograms - like in animl)
