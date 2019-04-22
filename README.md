@@ -148,6 +148,13 @@ Tudor Lapusan <br>
 twitter : @tlapusan <br> 
 email : tudor.lapusan@gmail.com
 
+# Library dependencies
+
+- jupyter
+- matplotlib 
+- scikit-learn 
+- pandas 
+
 # License
 This project is licensed under the terms of the MIT license, see LICENSE.
 
