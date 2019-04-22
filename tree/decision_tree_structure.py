@@ -292,14 +292,13 @@ class DecisionTreeStructure:
 
             split_sample = self.train_dataset.iloc[self.split_node_samples[node_id]]
 
+            plt.figure(figsize=figsize)
             if self.is_leaf[node_id]:
-                print(
+                plt.title(
                     f"Node {node_id}, sample size {len(split_sample)} ({len(split_sample.query(f'{self.target} == 0'))}/{len(split_sample.query(f'{self.target} == 1'))}), impurity {round(self.impurity[node_id], 2)} ")
             else:
-                print(
+                plt.title(
                     f"Node {node_id}, {self.features[self.feature[node_id]]}({sample[self.feature[node_id]]}) {threshold_sign} {self.threshold[node_id]}, sample size {len(split_sample)} ({len(split_sample.query(f'{self.target} == 0'))}/{len(split_sample.query(f'{self.target} == 1'))}), impurity {round(self.impurity[node_id], 2)} ")
-
-            plt.figure(figsize=figsize)
             max_range = split_sample[self.features[self.feature[node_id]]].max()
             min_range = split_sample[self.features[self.feature[node_id]]].min()
 
