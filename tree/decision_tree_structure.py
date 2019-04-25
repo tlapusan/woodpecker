@@ -89,6 +89,10 @@ class DecisionTreeStructure:
 
     show_leaf_samples_distribution()
         Show leaves samples counts using a histogram
+
+    show_leaf_predictions()
+        Show number of correct/wrong predictions for each leaf
+
     """
 
     def __init__(self, tree, train_dataset, features, target):
@@ -141,6 +145,7 @@ class DecisionTreeStructure:
                         stack.append((self.children_right[node_id]))
                     else:
                         self.is_leaf[node_id] = True
+
             func(self, *args, **kwargs)
 
         return wrapper
@@ -481,3 +486,44 @@ class DecisionTreeStructure:
         """
 
         return self.node_count
+
+    @_calculate_leaf_nodes
+    def show_leaf_predictions(self, dataset, target, figsize=(20, 7)):
+        """Show number of correct/wrong predictions for each leaf.
+
+        It's useful for :
+            - to see which leaves are participating for dataset predictions
+            - to see leaves performance for the dataset
+
+        :param dataset: pandas.DataFrame
+            Dataset for which we will make predictions
+        :param target: list
+            True targets
+        :param figsize: tuple of int
+            The plot size
+        """
+
+        x_predictions = list(self.tree.predict(dataset[self.features]))
+        prediction_correct = [0] * len(dataset)
+        prediction_wrong = [0] * len(dataset)
+
+        node_indicator = self.tree.decision_path(dataset[self.features])
+        for i in range(len(dataset)):
+            prediction_path = node_indicator.indices[node_indicator.indptr[i]:node_indicator.indptr[i + 1]]
+            prediction_leaf = prediction_path[len(prediction_path) - 1]
+
+            if x_predictions[i] == target[i]:
+                prediction_correct[prediction_leaf] += 1
+            else:
+                prediction_wrong[prediction_leaf] += 1
+
+        prediction_correct = [prediction_correct[i] for i in range(len(self.is_leaf)) if self.is_leaf[i]]
+        prediction_wrong = [prediction_wrong[i] for i in range(len(self.is_leaf)) if self.is_leaf[i]]
+        leaf_indices = [i for i in range(len(self.is_leaf)) if self.is_leaf[i]]
+
+        plt.figure(figsize=figsize)
+        plt.xticks(range(len(prediction_correct)), leaf_indices)
+        plt.bar(range(len(prediction_correct)), prediction_correct, label="correct predictions3")
+        plt.bar(range(len(prediction_wrong)), prediction_wrong, bottom=prediction_correct, label="wrong predictions")
+        plt.xlabel("leaf node ids", fontsize=20)
+        plt.legend()
