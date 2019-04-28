@@ -10,16 +10,16 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
 
 
 class DecisionTreeStructure:
-    """A visual interpretation of decision tree structure. Only for classification for the moment.
+    """A visual interpretation of decision woodpecker structure. Only for classification for the moment.
 
     It contains two types of visualisations :
         - visualisations related to leaf nodes
-        - visualisations about tree predictions
+        - visualisations about woodpecker predictions
 
     Parameters
     ----------show_leaf_impurity
-    tree : sklearn.tree.tree.DecisionTreeClassifier
-        The tree to investigate
+    woodpecker : sklearn.woodpecker.woodpecker.DecisionTreeClassifier
+        The woodpecker to investigate
 
     features : list
         The list of features names
@@ -27,7 +27,7 @@ class DecisionTreeStructure:
     Attributes
     ----------
     node_count : int
-        The number of nodes from the tree
+        The number of nodes from the woodpecker
 
     children_left : array of int, shape[node_count]
         children_left[i] holds the node id of the left child node of node i.
@@ -67,10 +67,10 @@ class DecisionTreeStructure:
         Show feature importance ordered by importance
 
     show_decision_tree_structure()
-        Show decision tree structure as a binary tree.
+        Show decision woodpecker structure as a binary woodpecker.
 
     show_decision_tree_prediction_path(sample)
-        Show only the decision path, from the whole tree, used for prediction.
+        Show only the decision path, from the whole woodpecker, used for prediction.
 
     show_decision_tree_splits_prediction()
         Show the decision path for a specified sample, together with feature space splits
@@ -96,14 +96,14 @@ class DecisionTreeStructure:
     """
 
     def __init__(self, tree, train_dataset, features, target):
-        """Initialize necessary information about the tree.
+        """Initialize necessary information about the woodpecker.
 
-        :param tree: sklearn.tree.tree.DecisionTreeClassifier
-            The tree to investigate
+        :param tree: sklearn.woodpecker.woodpecker.DecisionTreeClassifier
+            The woodpecker to investigate
         :param train_dataset: pandas.core.frame.DataFrame
-            The training dataset the tree was trained on
+            The training dataset the woodpecker was trained on
         :param features: array of strings
-            The list of features names used to train the tree
+            The list of features names used to train the woodpecker
         :param target: str
             The name of target variable
         """
@@ -151,9 +151,9 @@ class DecisionTreeStructure:
         return wrapper
 
     def show_decision_tree_structure(self, rotate=True):
-        """Show decision tree structure as a binary tree.
+        """Show decision woodpecker structure as a binary woodpecker.
 
-        It is just an utility method for graphviz functionality to render a decision tree structure.
+        It is just an utility method for graphviz functionality to render a decision woodpecker structure.
 
         :return: graphviz.files.Source
         """
@@ -203,12 +203,12 @@ class DecisionTreeStructure:
     def show_decision_tree_prediction_path(self, sample, is_weighted=False):
         """Visual interpretation of prediction path.
 
-        Show only the prediction path from a decision tree, instead of the whole tree.
+        Show only the prediction path from a decision woodpecker, instead of the whole woodpecker.
         It helps to easily understand and follow the prediction path.
         The blue nodes are the nodes from prediction path and the black nodes are just blue nodes brothers.
 
-        This kind of visualisation is very useful for debugging and understanding tree predictions.
-        Also it is useful to explain to non technical people the reason behind tree predictions.
+        This kind of visualisation is very useful for debugging and understanding woodpecker predictions.
+        Also it is useful to explain to non technical people the reason behind woodpecker predictions.
 
         :param is_weighted: boolean
             Whether or not to include weighted number of training samples reaching node i.
@@ -286,7 +286,7 @@ class DecisionTreeStructure:
     def show_decision_tree_splits_prediction(self, sample, bins=10, figsize=(10, 5)):
         """Visual interpretation of features space splits for a specified sample.
 
-        Show feature space splits for the tree nodes involved in prediction path for sample parameter.
+        Show feature space splits for the woodpecker nodes involved in prediction path for sample parameter.
         It is useful to
 
         :param figsize: tuple of int
@@ -460,7 +460,7 @@ class DecisionTreeStructure:
 
     @_calculate_leaf_nodes
     def get_leaf_node_count(self):
-        """Get number of leaves from the tree
+        """Get number of leaves from the woodpecker
         
         :return: int
             Number of leaves
@@ -470,7 +470,7 @@ class DecisionTreeStructure:
 
     @_calculate_leaf_nodes
     def get_split_node_count(self):
-        """Get number of split nodes from the tree
+        """Get number of split nodes from the woodpecker
         
         :return: int
             Number of split nodes 
@@ -479,7 +479,7 @@ class DecisionTreeStructure:
         return len(self.is_leaf) - sum(self.is_leaf)
 
     def get_node_count(self):
-        """Get total number of nodes from the tree
+        """Get total number of nodes from the woodpecker
         
         :return: int
             Total number of nodes
