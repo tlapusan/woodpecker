@@ -6,21 +6,20 @@ import pygraphviz as pgv
 from matplotlib import pyplot as plt
 from sklearn import tree as sklearn_tree
 
-# TODO add docs to each method
 logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
 
 
 class DecisionTreeStructure:
-    """A visual interpretation of decision tree structure. Only for classification for the moment.
+    """A visual interpretation of decision woodpecker structure. Only for classification for the moment.
 
     It contains two types of visualisations :
         - visualisations related to leaf nodes
-        - visualisations about tree predictions
+        - visualisations about woodpecker predictions
 
     Parameters
     ----------show_leaf_impurity
-    tree : sklearn.tree.tree.DecisionTreeClassifier
-        The tree to investigate
+    woodpecker : sklearn.woodpecker.woodpecker.DecisionTreeClassifier
+        The woodpecker to investigate
 
     features : list
         The list of features names
@@ -28,7 +27,7 @@ class DecisionTreeStructure:
     Attributes
     ----------
     node_count : int
-        The number of nodes from the tree
+        The number of nodes from the woodpecker
 
     children_left : array of int, shape[node_count]
         children_left[i] holds the node id of the left child node of node i.
@@ -68,10 +67,10 @@ class DecisionTreeStructure:
         Show feature importance ordered by importance
 
     show_decision_tree_structure()
-        Show decision tree structure as a binary tree.
+        Show decision woodpecker structure as a binary woodpecker.
 
     show_decision_tree_prediction_path(sample)
-        Show only the decision path, from the whole tree, used for prediction.
+        Show only the decision path, from the whole woodpecker, used for prediction.
 
     show_decision_tree_splits_prediction()
         Show the decision path for a specified sample, together with feature space splits
@@ -90,17 +89,21 @@ class DecisionTreeStructure:
 
     show_leaf_samples_distribution()
         Show leaves samples counts using a histogram
+
+    show_leaf_predictions()
+        Show number of correct/wrong predictions for each leaf
+
     """
 
     def __init__(self, tree, train_dataset, features, target):
-        """Initialize necessary information about the tree.
+        """Initialize necessary information about the woodpecker.
 
-        :param tree: sklearn.tree.tree.DecisionTreeClassifier
-            The tree to investigate
+        :param tree: sklearn.woodpecker.woodpecker.DecisionTreeClassifier
+            The woodpecker to investigate
         :param train_dataset: pandas.core.frame.DataFrame
-            The training dataset the tree was trained on
+            The training dataset the woodpecker was trained on
         :param features: array of strings
-            The list of features names used to train the tree
+            The list of features names used to train the woodpecker
         :param target: str
             The name of target variable
         """
@@ -123,10 +126,34 @@ class DecisionTreeStructure:
         self.is_leaf = []
         self.split_node_samples = {}
 
-    def show_decision_tree_structure(self, rotate=True):
-        """Show decision tree structure as a binary tree.
+    def _calculate_leaf_nodes(func):
+        """Decorator used to calculate the node type.
 
-        It is just an utility method for graphviz functionality to render a decision tree structure.
+        The array is_leaf[index] will be True in case the node with id=index is a leaf,
+        or False if the node is a split node.
+        """
+
+        def wrapper(self, *args, **kwargs):
+            if len(self.is_leaf) == 0:
+                self.is_leaf = np.zeros(shape=self.node_count, dtype=bool)
+                stack = [(0)]  # seed is the root node id and its parent depth
+                while len(stack) > 0:
+                    node_id = stack.pop()
+                    # If we have a test node
+                    if self.children_left[node_id] != self.children_right[node_id]:
+                        stack.append((self.children_left[node_id]))
+                        stack.append((self.children_right[node_id]))
+                    else:
+                        self.is_leaf[node_id] = True
+
+            func(self, *args, **kwargs)
+
+        return wrapper
+
+    def show_decision_tree_structure(self, rotate=True):
+        """Show decision woodpecker structure as a binary woodpecker.
+
+        It is just an utility method for graphviz functionality to render a decision woodpecker structure.
 
         :return: graphviz.files.Source
         """
@@ -157,10 +184,8 @@ class DecisionTreeStructure:
         plt.grid()
         plt.show()
 
+    @_calculate_leaf_nodes
     def _get_node_path_info(self, node_id, sample, is_weighted):
-        if len(self.is_leaf) == 0:
-            self._calculate_leaf_nodes()
-
         sample_value = round(sample[self.feature[node_id]], 2)
         if sample_value <= self.threshold[node_id]:
             threshold_sign = "<="
@@ -178,12 +203,12 @@ class DecisionTreeStructure:
     def show_decision_tree_prediction_path(self, sample, is_weighted=False):
         """Visual interpretation of prediction path.
 
-        Show only the prediction path from a decision tree, instead of the whole tree.
+        Show only the prediction path from a decision woodpecker, instead of the whole woodpecker.
         It helps to easily understand and follow the prediction path.
         The blue nodes are the nodes from prediction path and the black nodes are just blue nodes brothers.
 
-        This kind of visualisation is very useful for debugging and understanding tree predictions.
-        Also it is useful to explain to non technical people the reason behind tree predictions.
+        This kind of visualisation is very useful for debugging and understanding woodpecker predictions.
+        Also it is useful to explain to non technical people the reason behind woodpecker predictions.
 
         :param is_weighted: boolean
             Whether or not to include weighted number of training samples reaching node i.
@@ -257,10 +282,11 @@ class DecisionTreeStructure:
         return self.train_dataset.iloc[self.split_node_samples[node_id]]
 
     # TODO it is not clear now with transparency, make them on top ?
+    @_calculate_leaf_nodes
     def show_decision_tree_splits_prediction(self, sample, bins=10, figsize=(10, 5)):
         """Visual interpretation of features space splits for a specified sample.
 
-        Show feature space splits for the tree nodes involved in prediction path for sample parameter.
+        Show feature space splits for the woodpecker nodes involved in prediction path for sample parameter.
         It is useful to
 
         :param figsize: tuple of int
@@ -273,9 +299,6 @@ class DecisionTreeStructure:
 
         if len(self.split_node_samples) == 0:
             self._calculate_split_node_samples(self.train_dataset)
-
-        if len(self.is_leaf) == 0:
-            self._calculate_leaf_nodes()
 
         print(list(zip(self.features, sample)))
         print()
@@ -316,18 +339,7 @@ class DecisionTreeStructure:
             plt.legend()
             plt.show()
 
-    def _calculate_leaf_nodes(self):
-        self.is_leaf = np.zeros(shape=self.node_count, dtype=bool)
-        stack = [(0)]  # seed is the root node id and its parent depth
-        while len(stack) > 0:
-            node_id = stack.pop()
-            # If we have a test node
-            if (self.children_left[node_id] != self.children_right[node_id]):
-                stack.append((self.children_left[node_id]))
-                stack.append((self.children_right[node_id]))
-            else:
-                self.is_leaf[node_id] = True
-
+    @_calculate_leaf_nodes
     def show_leaf_impurity_distribution(self, bins=10, figsize=None):
         """ Visualize distribution of leaves impurities
 
@@ -337,9 +349,6 @@ class DecisionTreeStructure:
             The figure size to be displayed
         """
 
-        if len(self.is_leaf) == 0:
-            self._calculate_leaf_nodes()
-
         if figsize:
             plt.figure(figsize=figsize)
         plt.xticks(np.arange(0.0, 1.0, 0.05))
@@ -347,6 +356,7 @@ class DecisionTreeStructure:
         plt.xlabel("leaf impurity", fontsize=20)
         plt.ylabel("leaf count", fontsize=20)
 
+    @_calculate_leaf_nodes
     def show_leaf_impurity(self, figsize=None, display_type="plot"):
         """Show impurity for each leaf.
 
@@ -359,10 +369,6 @@ class DecisionTreeStructure:
         :param display_type: str, optional
             'plot' or 'text'
         """
-
-        # TODO create a decorator
-        if len(self.is_leaf) == 0:
-            self._calculate_leaf_nodes()
 
         leaf_impurity = [(i, self.impurity[i]) for i in range(0, self.node_count) if self.is_leaf[i]]
         leaves, impurity = zip(*leaf_impurity)
@@ -380,6 +386,7 @@ class DecisionTreeStructure:
             for leaf, impurity in leaf_impurity:
                 print(leaf, impurity)
 
+    @_calculate_leaf_nodes
     def show_leaf_samples_distribution(self, bins=10, figsize=None):
         """ Visualize distribution of leaves samples.
 
@@ -389,15 +396,13 @@ class DecisionTreeStructure:
             The figure size to be displayed
         """
 
-        if len(self.is_leaf) == 0:
-            self._calculate_leaf_nodes()
-
         if figsize:
             plt.figure(figsize=figsize)
         plt.hist([self.n_node_samples[i] for i in range(0, self.node_count) if self.is_leaf[i]], bins=bins)
         plt.xlabel("leaf sample", fontsize=20)
         plt.ylabel("leaf count", fontsize=20)
 
+    @_calculate_leaf_nodes
     def show_leaf_samples(self, figsize=None, display_type="plot"):
         """Show samples for each leaf.
 
@@ -410,9 +415,6 @@ class DecisionTreeStructure:
         :param display_type: str, optional
             'plot' or 'text'
         """
-
-        if len(self.is_leaf) == 0:
-            self._calculate_leaf_nodes()
 
         leaf_samples = [(i, self.n_node_samples[i]) for i in range(0, self.node_count) if self.is_leaf[i]]
         x, y = zip(*leaf_samples)
@@ -430,15 +432,13 @@ class DecisionTreeStructure:
             for leaf, samples in leaf_samples:
                 print(leaf, samples)
 
+    @_calculate_leaf_nodes
     def show_leaf_samples_by_class(self, figsize=None, leaf_sample_size=None):
         """Show samples by class for each leaf.
         
         :param figsize: tuple of int
             The plot size
         """
-
-        if len(self.is_leaf) == 0:
-            self._calculate_leaf_nodes()
 
         leaf_samples = [(i, self.value[i][0][0], self.value[i][0][1], self.impurity[i]) for i in
                         range(0, self.node_count)
@@ -458,35 +458,72 @@ class DecisionTreeStructure:
         plt.grid()
         plt.legend((p0[0], p1[0]), ('class 0 samples', 'class 1 samples'))
 
+    @_calculate_leaf_nodes
     def get_leaf_node_count(self):
-        """Get number of leaves from the tree
+        """Get number of leaves from the woodpecker
         
         :return: int
             Number of leaves
         """
 
-        if len(self.is_leaf) == 0:
-            self._calculate_leaf_nodes()
-
         return sum(self.is_leaf)
 
+    @_calculate_leaf_nodes
     def get_split_node_count(self):
-        """Get number of split nodes from the tree
+        """Get number of split nodes from the woodpecker
         
         :return: int
             Number of split nodes 
         """
 
-        if len(self.is_leaf) == 0:
-            self._calculate_leaf_nodes()
-
         return len(self.is_leaf) - sum(self.is_leaf)
 
     def get_node_count(self):
-        """Get total number of nodes from the tree
+        """Get total number of nodes from the woodpecker
         
         :return: int
             Total number of nodes
         """
-        
+
         return self.node_count
+
+    @_calculate_leaf_nodes
+    def show_leaf_predictions(self, dataset, target, figsize=(20, 7)):
+        """Show number of correct/wrong predictions for each leaf.
+
+        It's useful for :
+            - to see which leaves are participating for dataset predictions
+            - to see leaves performance for the dataset
+
+        :param dataset: pandas.DataFrame
+            Dataset for which we will make predictions
+        :param target: list
+            True targets
+        :param figsize: tuple of int
+            The plot size
+        """
+
+        x_predictions = list(self.tree.predict(dataset[self.features]))
+        prediction_correct = [0] * len(dataset)
+        prediction_wrong = [0] * len(dataset)
+
+        node_indicator = self.tree.decision_path(dataset[self.features])
+        for i in range(len(dataset)):
+            prediction_path = node_indicator.indices[node_indicator.indptr[i]:node_indicator.indptr[i + 1]]
+            prediction_leaf = prediction_path[len(prediction_path) - 1]
+
+            if x_predictions[i] == target[i]:
+                prediction_correct[prediction_leaf] += 1
+            else:
+                prediction_wrong[prediction_leaf] += 1
+
+        prediction_correct = [prediction_correct[i] for i in range(len(self.is_leaf)) if self.is_leaf[i]]
+        prediction_wrong = [prediction_wrong[i] for i in range(len(self.is_leaf)) if self.is_leaf[i]]
+        leaf_indices = [i for i in range(len(self.is_leaf)) if self.is_leaf[i]]
+
+        plt.figure(figsize=figsize)
+        plt.xticks(range(len(prediction_correct)), leaf_indices)
+        plt.bar(range(len(prediction_correct)), prediction_correct, label="correct predictions3")
+        plt.bar(range(len(prediction_wrong)), prediction_wrong, bottom=prediction_correct, label="wrong predictions")
+        plt.xlabel("leaf node ids", fontsize=20)
+        plt.legend()

@@ -22,7 +22,7 @@ The well known [titanic dataset](https://www.kaggle.com/c/titanic/data) was chos
 > features = ["Pclass", "Age", "Fare", "Sex_label", "Cabin_label", "Embarked_label"] <br>
 > target = "Survived" 
 
-Let see some descriptive statistics about training set. <br> 
+Let's see some descriptive statistics about training set. <br> 
 > train[features].describe() 
 
 ![](https://github.com/tlapusan/woodpecker/blob/version_0.1/resources/docs/images/classification/titanic_train_describe.png)
@@ -37,7 +37,7 @@ Let see some descriptive statistics about training set. <br>
 
 #### Visualize feature importance
 
-You don't have type all the code needed to extract feature importance,
+You don't have to type all the code needed to extract feature importance,
 to map them to feature names and to sort them.
 Now, you just type this simple utility function. 
 
@@ -61,7 +61,7 @@ In case of entropy, impurity is a range of values between 0 and 1.
 0 means that the leaf node is very confident about its predictions, 1 means the opposite.
 
 The tree performance is directly influenced by each leaf performance. So it's very important to have a general 
-overview of how leaves impurity looks.
+overview of how leaves impurity look.
 
 > dts.show_leaf_impurity_distribution(bins=40, figsize=(20, 7))
 
@@ -69,12 +69,12 @@ overview of how leaves impurity looks.
 
 #### Leaves sample distribution
 
-Sample is a metrics which shows how many examples from training set reached that node. <br>
+Sample is a metric which shows how many examples from training set reached that node. <br>
 For a leaf is ideal to have an impurity very close to 0, but it's also equally important 
 to have a significant set of samples reaching that leaf. If the set of samples is very small, could be a sign 
 of outfitting for the leaf.
 
-That's why is important to look both at leaves impurity and samples to get a better understanding of tree performance.
+That's why is important to look both at leaves impurity (previous plot) and samples to get a better understanding of tree performance.
 
 > dts.show_leaf_samples_distribution(bins=40, figsize=(20, 7))
 
@@ -103,14 +103,14 @@ This function return a dataframe with all training samples reaching a node.
 After looking at individual leaves metrics, we can see that there are some interesting leaves. 
 For example the leaf 19 has impurity 0, a lot of samples and all people survived (survived=1)
 Getting the samples from such a leaf can help us to discover patterns in data or to discover why a leaf 
-has bad performance.
+has good/bad performance.
 
 > dts.get_node_samples(node_id=19)[features + [target]].describe()
 
 ![](https://github.com/tlapusan/woodpecker/blob/version_0.1/resources/docs/images/classification/get_node_samples.png)
 
 We can see that majority of people were from a high social economic status (Pclass = 1), most of them were young to mid age,
-bought an expensive ticket (mean(Fare) from training is 32) and all are women.
+bought an expensive ticket (mean(Fare) from training is 32) and are all women.
 
 #### Visualize decision tree path prediction
 There will be moments when we need to justify why our model predicted a specific value.
@@ -128,7 +128,7 @@ Embarked_label     1.0 <br>
 
 #### Visualize decision tree splits path prediction
 This visualization shows the training data splits the model was build. 
-It can be used also as a way to learn how decision tree are build.
+It can be used also as a way to learn how decision tree was built.
 
 The sample is the same as above. 
 > dts.show_decision_tree_splits_prediction(sample, bins=20)
@@ -142,6 +142,9 @@ The sample is the same as above.
 # Release History
 - 0.1
     -  model structure investigation for DecisionTreeClassifier 
+- 0.2
+    - add visualisation for correct/wrong leaves predictions
+    - add setup.py file
 
 # Meta
 Tudor Lapusan <br>
