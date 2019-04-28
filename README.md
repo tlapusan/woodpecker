@@ -142,6 +142,9 @@ The sample is the same as above.
 # Release History
 - 0.1
     -  model structure investigation for DecisionTreeClassifier 
+- 0.2
+    - add visualisation for correct/wrong leaves predictions
+    - add setup.py file
 
 # Meta
 Tudor Lapusan <br>
