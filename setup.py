@@ -10,7 +10,7 @@ README = (HERE / "README.md").read_text()
 
 setuptools.setup(
     name="woodpecker-ml",
-    version="0.1",
+    version="0.2",
     description="A python library used for woodpecker structure interpretation.",
     long_description=README,
     long_description_content_type="text/markdown",
