@@ -9,6 +9,9 @@ from sklearn import tree as sklearn_tree
 logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
 
 
+# TODO change plot labels to display entropy or gini. and maybe from leaf to leaves ?
+# TODO make more clear how to set show_leaf_predictions parameters
+
 class DecisionTreeStructure:
     """A visual interpretation of decision woodpecker structure. Only for classification for the moment.
 
@@ -146,7 +149,7 @@ class DecisionTreeStructure:
                     else:
                         self.is_leaf[node_id] = True
 
-            func(self, *args, **kwargs)
+            return func(self, *args, **kwargs)
 
         return wrapper
 
@@ -187,6 +190,7 @@ class DecisionTreeStructure:
     @_calculate_leaf_nodes
     def _get_node_path_info(self, node_id, sample, is_weighted):
         sample_value = round(sample[self.feature[node_id]], 2)
+
         if sample_value <= self.threshold[node_id]:
             threshold_sign = "<="
         else:
@@ -228,10 +232,11 @@ class DecisionTreeStructure:
         g_tree.layout(prog='dot')
         for i in range(0, len(decision_node_path)):
             node_id = decision_node_path[i]
+            node_label = self._get_node_path_info(node_id, sample, is_weighted)
+            logging.debug(f"adding node id {node_id} with label {node_label}")
 
-            g_tree.add_node(node_id, color="blue", label=self._get_node_path_info(node_id, sample, is_weighted),
-                            fontsize=10,
-                            center=True, shape="ellipse")
+
+            g_tree.add_node(node_id, color="blue", label=node_label, fontsize=10, center=True, shape="ellipse")
 
             # check if node_id is not a leaf
             if self.children_left[node_id] != -1:
