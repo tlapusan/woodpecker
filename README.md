@@ -14,6 +14,9 @@ This library was developed with two main ideas in mind :
 - help us better understand the model structure, the model results and based on this to properly choose others hyperparameter values, other set of features for the next iteration
 - to justify/explain the predictions of ML models both for technical and non technical people
 
+# How to install ?
+pip install git+https://github.com/tlapusan/woodpecker.git
+
 # Usage example
 
 ### Training example

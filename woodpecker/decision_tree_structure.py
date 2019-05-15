@@ -284,7 +284,7 @@ class DecisionTreeStructure:
         if len(self.split_node_samples) == 0:
             self._calculate_split_node_samples(self.train_dataset)
 
-        return self.train_dataset.iloc[self.split_node_samples[node_id]]
+        return self.train_dataset.iloc[self.split_node_samples[node_id]][self.features + [self.target]]
 
     # TODO it is not clear now with transparency, make them on top ?
     @_calculate_leaf_nodes
