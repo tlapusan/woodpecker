@@ -1,4 +1,5 @@
 import logging
+from functools import wraps
 
 import graphviz
 import numpy as np
@@ -136,6 +137,7 @@ class DecisionTreeStructure:
         or False if the node is a split node.
         """
 
+        @wraps(func)
         def wrapper(self, *args, **kwargs):
             if len(self.is_leaf) == 0:
                 self.is_leaf = np.zeros(shape=self.node_count, dtype=bool)
@@ -235,7 +237,6 @@ class DecisionTreeStructure:
             node_label = self._get_node_path_info(node_id, sample, is_weighted)
             logging.debug(f"adding node id {node_id} with label {node_label}")
 
-
             g_tree.add_node(node_id, color="blue", label=node_label, fontsize=10, center=True, shape="ellipse")
 
             # check if node_id is not a leaf
@@ -273,9 +274,14 @@ class DecisionTreeStructure:
                 except KeyError as ex:
                     self.split_node_samples[node_id] = [index]
 
-    def get_node_samples(self, node_id):
+    def get_node_samples(self, node_id, return_type="plain"):
         """Create a dataframe containing all training samples reaching node_id.
 
+        :param return_type: str
+            Specify different types of outputs:
+             'plain' to return all samples from the training set as a dataframe
+             'describe' to generate statistics that summarize the samples
+             'describe_by_class' to generate statistics that summarize th samples, but by class target variable
         :param node_id: int
             The id of node_id
         :return: pandas.DataFrame
@@ -284,7 +290,15 @@ class DecisionTreeStructure:
         if len(self.split_node_samples) == 0:
             self._calculate_split_node_samples(self.train_dataset)
 
-        return self.train_dataset.iloc[self.split_node_samples[node_id]][self.features + [self.target]]
+        output = self.train_dataset.iloc[self.split_node_samples[node_id]][self.features + [self.target]]. \
+            sort_values(by=self.target)
+
+        if return_type == "plain":
+            return output
+        elif return_type == "describe":
+            return output.describe()
+        elif return_type == "describe_by_class":
+            return output.groupby(self.target).describe().transpose()
 
     # TODO it is not clear now with transparency, make them on top ?
     @_calculate_leaf_nodes
@@ -438,10 +452,16 @@ class DecisionTreeStructure:
                 print(leaf, samples)
 
     @_calculate_leaf_nodes
-    def show_leaf_samples_by_class(self, figsize=None, leaf_sample_size=None):
+    def show_leaf_samples_by_class(self, figsize=None, leaf_sample_size=None, plot_ylim=None):
         """Show samples by class for each leaf.
         
-        :param figsize: tuple of int
+        :param plot_ylim: int, optional
+            The max value for oY. This is useful in case we have few leaves with big sample values which 'shadow'
+            the other leaves values
+        :param leaf_sample_size: int, optional
+            The sample of leaves to plot. This is useful when the tree contains to many leaves and cannot be displayed
+            clear in a plot.
+        :param figsize: tuple of int, optional
             The plot size
         """
 
@@ -457,8 +477,13 @@ class DecisionTreeStructure:
         p0 = plt.bar(range(0, len(index[:leaf_sample_size])), leaf_samples_0[:leaf_sample_size])
         p1 = plt.bar(range(0, len(index[:leaf_sample_size])), leaf_samples_1[:leaf_sample_size],
                      bottom=leaf_samples_0[:leaf_sample_size])
+
         plt.xticks(range(0, len(index)), index)
-        plt.xlabel("leaf node ids", size=20)
+
+        if plot_ylim is not None:
+            plt.ylim(0, plot_ylim)
+
+        plt.xlabel("leaf node ids 2", size=20)
         plt.ylabel("samples", size=20)
         plt.grid()
         plt.legend((p0[0], p1[0]), ('class 0 samples', 'class 1 samples'))
