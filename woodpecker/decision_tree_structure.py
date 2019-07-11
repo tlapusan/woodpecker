@@ -483,7 +483,7 @@ class DecisionTreeStructure:
         if plot_ylim is not None:
             plt.ylim(0, plot_ylim)
 
-        plt.xlabel("leaf node ids 2", size=20)
+        plt.xlabel("leaf node ids", size=20)
         plt.ylabel("samples", size=20)
         plt.grid()
         plt.legend((p0[0], p1[0]), ('class 0 samples', 'class 1 samples'))
