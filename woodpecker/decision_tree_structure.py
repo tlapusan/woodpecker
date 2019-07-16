@@ -1,5 +1,4 @@
 import logging
-from functools import wraps
 
 import graphviz
 import numpy as np
@@ -130,30 +129,24 @@ class DecisionTreeStructure:
         self.is_leaf = []
         self.split_node_samples = {}
 
-    def _calculate_leaf_nodes(func):
-        """Decorator used to calculate the node type.
+    def _calculate_leaf_nodes(self):
+        """Used to calculate the node type.
 
         The array is_leaf[index] will be True in case the node with id=index is a leaf,
         or False if the node is a split node.
         """
 
-        @wraps(func)
-        def wrapper(self, *args, **kwargs):
-            if len(self.is_leaf) == 0:
-                self.is_leaf = np.zeros(shape=self.node_count, dtype=bool)
-                stack = [(0)]  # seed is the root node id and its parent depth
-                while len(stack) > 0:
-                    node_id = stack.pop()
-                    # If we have a test node
-                    if self.children_left[node_id] != self.children_right[node_id]:
-                        stack.append((self.children_left[node_id]))
-                        stack.append((self.children_right[node_id]))
-                    else:
-                        self.is_leaf[node_id] = True
-
-            return func(self, *args, **kwargs)
-
-        return wrapper
+        if len(self.is_leaf) == 0:
+            self.is_leaf = np.zeros(shape=self.node_count, dtype=bool)
+            stack = [(0)]  # seed is the root node id and its parent depth
+            while len(stack) > 0:
+                node_id = stack.pop()
+                # If we have a test node
+                if self.children_left[node_id] != self.children_right[node_id]:
+                    stack.append((self.children_left[node_id]))
+                    stack.append((self.children_right[node_id]))
+                else:
+                    self.is_leaf[node_id] = True
 
     def show_decision_tree_structure(self, rotate=True):
         """Show decision woodpecker structure as a binary woodpecker.
@@ -189,8 +182,9 @@ class DecisionTreeStructure:
         plt.grid()
         plt.show()
 
-    @_calculate_leaf_nodes
     def _get_node_path_info(self, node_id, sample, is_weighted):
+        self._calculate_leaf_nodes()
+
         sample_value = round(sample[self.feature[node_id]], 2)
 
         if sample_value <= self.threshold[node_id]:
@@ -301,7 +295,6 @@ class DecisionTreeStructure:
             return output.groupby(self.target).describe().transpose()
 
     # TODO it is not clear now with transparency, make them on top ?
-    @_calculate_leaf_nodes
     def show_decision_tree_splits_prediction(self, sample, bins=10, figsize=(10, 5)):
         """Visual interpretation of features space splits for a specified sample.
 
@@ -315,6 +308,8 @@ class DecisionTreeStructure:
         :param sample: array of doubles, shape[features]
             The array of features values
         """
+
+        self._calculate_leaf_nodes()
 
         if len(self.split_node_samples) == 0:
             self._calculate_split_node_samples(self.train_dataset)
@@ -358,8 +353,7 @@ class DecisionTreeStructure:
             plt.legend()
             plt.show()
 
-    @_calculate_leaf_nodes
-    def show_leaf_impurity_distribution(self, bins=10, figsize=None):
+    def show_leaf_impurity_distribution(self, bins=10, figsize=(10, 5)):
         """ Visualize distribution of leaves impurities
 
         :param bins: int
@@ -368,6 +362,8 @@ class DecisionTreeStructure:
             The figure size to be displayed
         """
 
+        self._calculate_leaf_nodes()
+
         if figsize:
             plt.figure(figsize=figsize)
         plt.xticks(np.arange(0.0, 1.0, 0.05))
@@ -375,8 +371,7 @@ class DecisionTreeStructure:
         plt.xlabel("leaf impurity", fontsize=20)
         plt.ylabel("leaf count", fontsize=20)
 
-    @_calculate_leaf_nodes
-    def show_leaf_impurity(self, figsize=None, display_type="plot"):
+    def show_leaf_impurity(self, figsize=(15, 7), display_type="plot"):
         """Show impurity for each leaf.
 
         If display_type = 'plot' it will show leaves impurities using a plot.
@@ -389,6 +384,7 @@ class DecisionTreeStructure:
             'plot' or 'text'
         """
 
+        self._calculate_leaf_nodes()
         leaf_impurity = [(i, self.impurity[i]) for i in range(0, self.node_count) if self.is_leaf[i]]
         leaves, impurity = zip(*leaf_impurity)
 
@@ -405,7 +401,6 @@ class DecisionTreeStructure:
             for leaf, impurity in leaf_impurity:
                 print(leaf, impurity)
 
-    @_calculate_leaf_nodes
     def show_leaf_samples_distribution(self, bins=10, figsize=None):
         """ Visualize distribution of leaves samples.
 
@@ -415,15 +410,15 @@ class DecisionTreeStructure:
             The figure size to be displayed
         """
 
+        self._calculate_leaf_nodes()
         if figsize:
             plt.figure(figsize=figsize)
         plt.hist([self.n_node_samples[i] for i in range(0, self.node_count) if self.is_leaf[i]], bins=bins)
         plt.xlabel("leaf sample", fontsize=20)
         plt.ylabel("leaf count", fontsize=20)
 
-    @_calculate_leaf_nodes
     def show_leaf_samples(self, figsize=None, display_type="plot"):
-        """Show samples for each leaf.
+        """Show number of training samples from each leaf.
 
         If display_type = 'plot' it will show leaves samples using a plot.
         If display_type = 'text' it will show leaves samples as text. This method is preferred if number
@@ -435,6 +430,7 @@ class DecisionTreeStructure:
             'plot' or 'text'
         """
 
+        self._calculate_leaf_nodes()
         leaf_samples = [(i, self.n_node_samples[i]) for i in range(0, self.node_count) if self.is_leaf[i]]
         x, y = zip(*leaf_samples)
 
@@ -451,7 +447,6 @@ class DecisionTreeStructure:
             for leaf, samples in leaf_samples:
                 print(leaf, samples)
 
-    @_calculate_leaf_nodes
     def show_leaf_samples_by_class(self, figsize=None, leaf_sample_size=None, plot_ylim=None):
         """Show samples by class for each leaf.
         
@@ -465,6 +460,7 @@ class DecisionTreeStructure:
             The plot size
         """
 
+        self._calculate_leaf_nodes()
         leaf_samples = [(i, self.value[i][0][0], self.value[i][0][1], self.impurity[i]) for i in
                         range(0, self.node_count)
                         if (self.is_leaf[i])]
@@ -488,7 +484,6 @@ class DecisionTreeStructure:
         plt.grid()
         plt.legend((p0[0], p1[0]), ('class 0 samples', 'class 1 samples'))
 
-    @_calculate_leaf_nodes
     def get_leaf_node_count(self):
         """Get number of leaves from the woodpecker
         
@@ -496,9 +491,9 @@ class DecisionTreeStructure:
             Number of leaves
         """
 
+        self._calculate_leaf_nodes()
         return sum(self.is_leaf)
 
-    @_calculate_leaf_nodes
     def get_split_node_count(self):
         """Get number of split nodes from the woodpecker
         
@@ -506,6 +501,7 @@ class DecisionTreeStructure:
             Number of split nodes 
         """
 
+        self._calculate_leaf_nodes()
         return len(self.is_leaf) - sum(self.is_leaf)
 
     def get_node_count(self):
@@ -517,7 +513,6 @@ class DecisionTreeStructure:
 
         return self.node_count
 
-    @_calculate_leaf_nodes
     def show_leaf_predictions(self, dataset, target, figsize=(20, 7)):
         """Show number of correct/wrong predictions for each leaf.
 
@@ -533,6 +528,7 @@ class DecisionTreeStructure:
             The plot size
         """
 
+        self._calculate_leaf_nodes()
         x_predictions = list(self.tree.predict(dataset[self.features]))
         prediction_correct = [0] * len(dataset)
         prediction_wrong = [0] * len(dataset)
