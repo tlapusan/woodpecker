@@ -7,7 +7,9 @@ from matplotlib import pyplot as plt
 from sklearn import tree as sklearn_tree
 from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
 
+
 logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
+
 
 
 # TODO change plot labels to display entropy or gini. and maybe from leaf to leaves ?
