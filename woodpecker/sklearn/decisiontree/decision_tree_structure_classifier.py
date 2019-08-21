@@ -1,11 +1,8 @@
 import logging
 
-import graphviz
-import numpy as np
-import pygraphviz as pgv
 from matplotlib import pyplot as plt
 
-from woodpecker.decision_tree_structure import DecisionTreeStructure
+from woodpecker.sklearn.decisiontree.decision_tree_structure import DecisionTreeStructure
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
 

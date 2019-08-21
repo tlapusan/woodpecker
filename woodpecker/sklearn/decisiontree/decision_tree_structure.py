@@ -1,4 +1,5 @@
 import logging
+import sys
 
 import graphviz
 import numpy as np
@@ -7,9 +8,7 @@ from matplotlib import pyplot as plt
 from sklearn import tree as sklearn_tree
 from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
 
-
 logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
-
 
 
 # TODO change plot labels to display entropy or gini. and maybe from leaf to leaves ?
@@ -165,23 +164,37 @@ class DecisionTreeStructure:
                                                 filled=True, rotate=rotate, node_ids=True)
         return graphviz.Source(dot_data)
 
-    def show_features_importance(self, figsize=(20, 10)):
+    def show_features_importance(self, barh=False, max_feature_to_display=None, figsize=(20, 10)):
         """Visual representation of features importance.
 
 
         Features are ordered descending by their importance using a bar plot visualisation.
         oX contains features name and oY contains features importance.
 
+        :param max_feature_to_display: int
+            Maximum number of features to display. This is useful in case we have hundreds of features and the
+            plot is too big
+        :param barh: boolean
+            True if we want to display feature importances into a bath plot, false otherwise
         :param figsize: tuple
             the size (x, y) of the plot (default is (20, 10))
         :return: None
         """
 
-        feature_names, feature_importances = zip(
+        feature_importances, feature_names = zip(
             *sorted(list(zip(self.tree.feature_importances_, self.features)), key=lambda tup: tup[0],
                     reverse=True))
+
+        if max_feature_to_display is not None:
+            feature_names = feature_names[:max_feature_to_display]
+            feature_importances = feature_importances[:max_feature_to_display]
+
         plt.figure(figsize=figsize)
-        plt.bar(feature_importances, feature_names)
+        if barh:
+            plt.barh(feature_names, feature_importances)
+        else:
+            plt.bar(feature_names, feature_importances)
+
         plt.xlabel("feature name", fontsize=20)
         plt.ylabel("feature importance", fontsize=20)
         plt.grid()
@@ -200,19 +213,30 @@ class DecisionTreeStructure:
         newline = "\n"
 
         if isinstance(self.tree, DecisionTreeClassifier):
+            # I created bellow local variables because of reformat code issues(when the whole statement is in return)
+            split_value = self.features[self.feature[node_id]] + '(' + str(
+                sample[self.feature[node_id]]) + ') ' + threshold_sign + ' ' + str(
+                round(self.threshold[node_id], 2)) + newline if not self.is_leaf[node_id] else ''
+            weighted_sample_value = 'weighted sample ' + str(
+                round(self.weighted_n_node_samples[node_id], 1)) + newline if is_weighted else ''
             return f"Node {node_id} \n" \
-                   f"{self.features[self.feature[node_id]] + '(' + str(sample[self.feature[node_id]]) + ') ' +  threshold_sign + ' ' + str(round(self.threshold[node_id], 2)) + newline if not self.is_leaf[node_id] else ''}" \
-                   f" samples {self.n_node_samples[node_id]} \n" \
-                   f" {'weighted sample ' + str(round(self.weighted_n_node_samples[node_id], 1)) + newline if is_weighted else ''}" \
-                   f"values {self.value[node_id][0]}, \n " \
-                   f"impurity {round(self.impurity[node_id], 2)}"
+                f"{split_value}" \
+                f"samples {self.n_node_samples[node_id]} \n" \
+                f"{weighted_sample_value}" \
+                f"values {self.value[node_id][0]}, \n" \
+                f"impurity {round(self.impurity[node_id], 2)}"
         elif isinstance(self.tree, DecisionTreeRegressor):
+            split_value = self.features[self.feature[node_id]] + '(' + str(
+                sample[self.feature[node_id]]) + ') ' + threshold_sign + ' ' + str(
+                round(self.threshold[node_id], 2)) + newline if not self.is_leaf[node_id] else ''
+            weighted_sample_value = 'weighted sample ' + str(
+                round(self.weighted_n_node_samples[node_id], 1)) + newline if is_weighted else ''
             return f"Node {node_id} \n" \
-                   f"{self.features[self.feature[node_id]] + '(' + str(sample[self.feature[node_id]]) + ') ' +  threshold_sign + ' ' + str(round(self.threshold[node_id], 2)) + newline if not self.is_leaf[node_id] else ''}" \
-                   f" samples {self.n_node_samples[node_id]} \n" \
-                   f" {'weighted sample ' + str(round(self.weighted_n_node_samples[node_id], 1)) + newline if is_weighted else ''}" \
-                   f"prediction {self.value[node_id][0][0]}, \n " \
-                   f"{self.tree.criterion.upper()} {round(self.impurity[node_id], 2)}"
+                f"{split_value}" \
+                f"samples {self.n_node_samples[node_id]} \n" \
+                f"{weighted_sample_value}" \
+                f"prediction {self.value[node_id][0][0]}, \n" \
+                f"{self.tree.criterion.upper()} {round(self.impurity[node_id], 2)}"
 
     def show_decision_tree_prediction_path(self, sample, is_weighted=False):
         """Visual interpretation of prediction path.
@@ -309,7 +333,7 @@ class DecisionTreeStructure:
         elif return_type == "describe_by_class":
             return output.groupby(self.target).describe().transpose()
 
-    def show_leaf_samples_distribution(self, bins=10, figsize=None):
+    def show_leaf_samples_distribution(self, min_samples=0, max_samples=sys.maxsize, bins=10, figsize=None):
         """ Visualize distribution of leaves samples.
 
         :param bins: int
@@ -321,7 +345,9 @@ class DecisionTreeStructure:
         self._calculate_leaf_nodes()
         if figsize:
             plt.figure(figsize=figsize)
-        plt.hist([self.n_node_samples[i] for i in range(0, self.node_count) if self.is_leaf[i]], bins=bins)
+        plt.hist([self.n_node_samples[i] for i in range(0, self.node_count) if
+                  self.is_leaf[i] and self.n_node_samples[i] >= min_samples and self.n_node_samples[i] <= max_samples],
+                 bins=bins)
         plt.xlabel("leaf sample", fontsize=20)
         plt.ylabel("leaf count", fontsize=20)
 
@@ -356,7 +382,7 @@ class DecisionTreeStructure:
 
     def get_leaf_node_count(self):
         """Get number of leaves from the woodpecker
-        
+
         :return: int
             Number of leaves
         """
@@ -366,9 +392,9 @@ class DecisionTreeStructure:
 
     def get_split_node_count(self):
         """Get number of split nodes from the woodpecker
-        
+
         :return: int
-            Number of split nodes 
+            Number of split nodes
         """
 
         self._calculate_leaf_nodes()
@@ -376,7 +402,7 @@ class DecisionTreeStructure:
 
     def get_node_count(self):
         """Get total number of nodes from the woodpecker
-        
+
         :return: int
             Total number of nodes
         """
