@@ -165,15 +165,14 @@ class DecisionTreeStructure:
         return graphviz.Source(dot_data)
 
     def show_features_importance(self, barh=False, max_feature_to_display=None, figsize=(20, 10)):
-        """Visual representation of features importance.
+        """Visual representation of features importance for DecisionTree.
 
 
         Features are ordered descending by their importance using a bar plot visualisation.
-        oX contains features name and oY contains features importance.
 
         :param max_feature_to_display: int
             Maximum number of features to display. This is useful in case we have hundreds of features and the
-            plot is too big
+            plot become incomprehensible.
         :param barh: boolean
             True if we want to display feature importances into a bath plot, false otherwise
         :param figsize: tuple
