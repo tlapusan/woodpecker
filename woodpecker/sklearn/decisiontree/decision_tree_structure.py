@@ -15,24 +15,28 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
 # TODO make more clear how to set show_leaf_predictions parameters
 
 class DecisionTreeStructure:
-    """A visual interpretation of decision woodpecker structure. Only for classification for the moment.
+    """A visual interpretation of decision tree structures.
 
     It contains two types of visualisations :
         - visualisations related to leaf nodes
-        - visualisations about woodpecker predictions
-
-    Parameters
-    ----------show_leaf_impurity
-    woodpecker : sklearn.woodpecker.woodpecker.DecisionTreeClassifier
-        The woodpecker to investigate
-
-    features : list
-        The list of features names
+        - visualisations about tree predictions
 
     Attributes
     ----------
+    tree : sklearn.tree.DecisionTreeClassifier
+        The tree to investigate
+
+    train_dataset: pandas.core.frame.DataFrame
+        The dataset the tree was trained on
+
+    features: array of strings
+        The list of features names used to train the tree
+
+    target: str
+        The name of target variable
+
     node_count : int
-        The number of nodes from the woodpecker
+        The number of nodes from the tree
 
     children_left : array of int, shape[node_count]
         children_left[i] holds the node id of the left child node of node i.
@@ -65,50 +69,17 @@ class DecisionTreeStructure:
 
     split_node_samples: array of int, shape[node_count]
         split_node_samples[i] holds training samples reaching the node i
-
-    Methods
-    -------
-    show_features_importance()
-        Show feature importance ordered by importance
-
-    show_decision_tree_structure()
-        Show decision woodpecker structure as a binary woodpecker.
-
-    show_decision_tree_prediction_path(sample)
-        Show only the decision path, from the whole woodpecker, used for prediction.
-
-    show_decision_tree_splits_prediction()
-        Show the decision path for a specified sample, together with feature space splits
-
-    show_leaf_impurity()
-        Show only the leaf nodes associated with them impurity
-
-    show_leaf_impurity_distribution()
-        Show leaves impurities using a histogram
-
-    show_leaf_samples()
-        Show only the leaf nodes associated with them samples counts
-
-    show_leaf_samples_by_class()
-        Show only the leaf nodes associated with them samples counts, grouped by target class
-
-    show_leaf_samples_distribution()
-        Show leaves samples counts using a histogram
-
-    show_leaf_predictions()
-        Show number of correct/wrong predictions for each leaf
-
     """
 
     def __init__(self, tree, train_dataset, features, target):
-        """Initialize necessary information about the woodpecker.
+        """Initialize necessary information about the tree.
 
-        :param tree: sklearn.woodpecker.woodpecker.DecisionTreeClassifier
-            The woodpecker to investigate
+        :param tree: sklearn.tree.DecisionTreeClassifier
+            The tree to investigate
         :param train_dataset: pandas.core.frame.DataFrame
-            The training dataset the woodpecker was trained on
+            The training dataset the tree was trained on
         :param features: array of strings
-            The list of features names used to train the woodpecker
+            The list of features names used to train the tree
         :param target: str
             The name of target variable
         """
@@ -123,8 +94,6 @@ class DecisionTreeStructure:
         self.children_right = tree.tree_.children_right
         self.feature = tree.tree_.feature
         self.threshold = tree.tree_.threshold
-
-        # TODO - change impurity to some more generic for both classification and regression
         self.impurity = tree.tree_.impurity
         self.n_node_samples = tree.tree_.n_node_samples
         self.weighted_n_node_samples = tree.tree_.weighted_n_node_samples
@@ -153,9 +122,9 @@ class DecisionTreeStructure:
                     self.is_leaf[node_id] = True
 
     def show_decision_tree_structure(self, rotate=True):
-        """Show decision woodpecker structure as a binary woodpecker.
+        """Show decision tree structure as a binary tree.
 
-        It is just an utility method for graphviz functionality to render a decision woodpecker structure.
+        It is just an utility method for graphviz functionality to render a decision tree structure.
 
         :return: graphviz.files.Source
         """
@@ -174,7 +143,7 @@ class DecisionTreeStructure:
             Maximum number of features to display. This is useful in case we have hundreds of features and the
             plot become incomprehensible.
         :param barh: boolean
-            True if we want to display feature importances into a bath plot, false otherwise
+            True if we want to display feature importance into a bath plot, false otherwise
         :param figsize: tuple
             the size (x, y) of the plot (default is (20, 10))
         :return: None
@@ -321,7 +290,7 @@ class DecisionTreeStructure:
         if len(self.split_node_samples) == 0:
             self._calculate_split_node_samples(self.train_dataset)
 
-        print(self.split_node_samples)
+        # print(self.split_node_samples)
         output = self.train_dataset.iloc[self.split_node_samples[node_id]][self.features + [self.target]]. \
             sort_values(by=self.target)
 
@@ -380,7 +349,7 @@ class DecisionTreeStructure:
                 print(leaf, samples)
 
     def get_leaf_node_count(self):
-        """Get number of leaves from the woodpecker
+        """Get number of leaves from the tree
 
         :return: int
             Number of leaves
@@ -390,7 +359,7 @@ class DecisionTreeStructure:
         return sum(self.is_leaf)
 
     def get_split_node_count(self):
-        """Get number of split nodes from the woodpecker
+        """Get number of split nodes from the tree
 
         :return: int
             Number of split nodes
@@ -400,7 +369,7 @@ class DecisionTreeStructure:
         return len(self.is_leaf) - sum(self.is_leaf)
 
     def get_node_count(self):
-        """Get total number of nodes from the woodpecker
+        """Get total number of nodes from the tree
 
         :return: int
             Total number of nodes

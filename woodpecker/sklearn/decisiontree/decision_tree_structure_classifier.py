@@ -8,13 +8,18 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
 
 
 class DecisionTreeStructureClassifier(DecisionTreeStructure):
+    """A class used to visually interpret the DecisionTreeClassifier structure from scikit-learn library.
+
+    Parent class, DecisionTreeStructure, contains the common visualisation methods which can be used for both
+    classification and regression trees.
+    """
 
     def show_leaf_impurity(self, figsize=None, display_type="plot"):
         """Show impurity for each leaf.
 
         If display_type = 'plot' it will show leaves impurities using a plot.
         If display_type = 'text' it will show leaves impurities as text. This method is preferred if number
-        of leaves is very large and we cannot determine clearly the leaves from the plot.
+        of leaves is very large and the plot became very big and hard to interpret.
 
         :param figsize: tuple of int
             The plot size
@@ -40,7 +45,7 @@ class DecisionTreeStructureClassifier(DecisionTreeStructure):
                 print(leaf, impurity)
 
     def show_leaf_impurity_distribution(self, bins=10, figsize=(10, 5)):
-        """ Visualize distribution of leaves impurities
+        """Visualize distribution of leaves impurities.
 
         :param bins: int
             Number of bins of histograms
@@ -100,9 +105,9 @@ class DecisionTreeStructureClassifier(DecisionTreeStructure):
 
     # TODO it is not clear now with transparency, make them on top ?
     def show_decision_tree_splits_prediction(self, sample, bins=10, figsize=(10, 5)):
-        """Visual interpretation of features space splits for a specified sample.
+        """Visual interpretation of features space splits for a specified sample prediction.
 
-        Show feature space splits for the woodpecker nodes involved in prediction path for sample parameter.
+        Show feature space splits for the tree nodes involved in prediction path for sample parameter.
         It is useful to
 
         :param figsize: tuple of int
@@ -134,12 +139,24 @@ class DecisionTreeStructureClassifier(DecisionTreeStructure):
             split_sample = self.train_dataset.iloc[self.split_node_samples[node_id]]
 
             plt.figure(figsize=figsize)
+            sample_size = f"sample size {len(split_sample)}"
+            class_0_size = len(split_sample.query(f'{self.target} == 0'))
+            class_1_size = len(split_sample.query(f'{self.target} == 1'))
+            sample_size_distribution = f"({class_0_size}/{class_1_size})"
+
             if self.is_leaf[node_id]:
                 plt.title(
-                    f"Node {node_id}, sample size {len(split_sample)} ({len(split_sample.query(f'{self.target} == 0'))}/{len(split_sample.query(f'{self.target} == 1'))}), impurity {round(self.impurity[node_id], 2)} ")
+                    f"Node {node_id}, "
+                    f"{sample_size}{sample_size_distribution}, "
+                    f"impurity {round(self.impurity[node_id], 2)}")
             else:
+                feature_split_name = f"{self.features[self.feature[node_id]]}({sample[self.feature[node_id]]})"
                 plt.title(
-                    f"Node {node_id}, {self.features[self.feature[node_id]]}({sample[self.feature[node_id]]}) {threshold_sign} {self.threshold[node_id]}, sample size {len(split_sample)} ({len(split_sample.query(f'{self.target} == 0'))}/{len(split_sample.query(f'{self.target} == 1'))}), impurity {round(self.impurity[node_id], 2)} ")
+                    f"Node {node_id}, "
+                    f"{feature_split_name} {threshold_sign} {self.threshold[node_id]}, "
+                    f"{sample_size}{sample_size_distribution}, "
+                    f"impurity {round(self.impurity[node_id], 2)}")
+
             max_range = split_sample[self.features[self.feature[node_id]]].max()
             min_range = split_sample[self.features[self.feature[node_id]]].min()
 
@@ -157,43 +174,40 @@ class DecisionTreeStructureClassifier(DecisionTreeStructure):
             plt.legend()
             plt.show()
 
-    def show_leaf_samples_by_class(self, figsize=None, leaf_sample_size=None, plot_ylim=None):
-        """Show samples by class for each leaf.
 
-        :param plot_ylim: int, optional
-            The max value for oY. This is useful in case we have few leaves with big sample values which 'shadow'
-            the other leaves values
-        :param leaf_sample_size: int, optional
-            The sample of leaves to plot. This is useful when the tree contains to many leaves and cannot be displayed
-            clear in a plot.
-        :param figsize: tuple of int, optional
-            The plot size
-        """
+def show_leaf_samples_by_class(self, figsize=None, leaf_sample_size=None, plot_ylim=None):
+    """Show samples by class for each leaf.
 
-        self._calculate_leaf_nodes()
-        leaf_samples = [(i, self.value[i][0][0], self.value[i][0][1], self.impurity[i]) for i in
-                        range(0, self.node_count)
-                        if (self.is_leaf[i])]
-        index, leaf_samples_0, leaf_samples_1, impurity_sample = zip(*leaf_samples)
+    :param plot_ylim: int, optional
+        The max value for oY. This is useful in case we have few leaves with big sample values which 'shadow'
+        the other leaves values
+    :param leaf_sample_size: int, optional
+        The sample of leaves to plot. This is useful when the tree contains to many leaves and cannot be displayed
+        clear in a plot.
+    :param figsize: tuple of int, optional
+        The plot size
+    """
 
-        if leaf_sample_size is None:
-            leaf_sample_size = len(index)
-        if figsize:
-            plt.figure(figsize=figsize)
-        p0 = plt.bar(range(0, len(index[:leaf_sample_size])), leaf_samples_0[:leaf_sample_size])
-        p1 = plt.bar(range(0, len(index[:leaf_sample_size])), leaf_samples_1[:leaf_sample_size],
-                     bottom=leaf_samples_0[:leaf_sample_size])
+    self._calculate_leaf_nodes()
+    leaf_samples = [(i, self.value[i][0][0], self.value[i][0][1], self.impurity[i]) for i in
+                    range(0, self.node_count)
+                    if (self.is_leaf[i])]
+    index, leaf_samples_0, leaf_samples_1, impurity_sample = zip(*leaf_samples)
 
-        plt.xticks(range(0, len(index)), index)
+    if leaf_sample_size is None:
+        leaf_sample_size = len(index)
+    if figsize:
+        plt.figure(figsize=figsize)
+    p0 = plt.bar(range(0, len(index[:leaf_sample_size])), leaf_samples_0[:leaf_sample_size])
+    p1 = plt.bar(range(0, len(index[:leaf_sample_size])), leaf_samples_1[:leaf_sample_size],
+                 bottom=leaf_samples_0[:leaf_sample_size])
 
-        if plot_ylim is not None:
-            plt.ylim(0, plot_ylim)
+    plt.xticks(range(0, len(index)), index)
 
-        plt.xlabel("leaf node ids", size=20)
-        plt.ylabel("samples", size=20)
-        plt.grid()
-        plt.legend((p0[0], p1[0]), ('class 0 samples', 'class 1 samples'))
+    if plot_ylim is not None:
+        plt.ylim(0, plot_ylim)
 
-
-if __name__ == "__main__":
-    pass
+    plt.xlabel("leaf node ids", size=20)
+    plt.ylabel("samples", size=20)
+    plt.grid()
+    plt.legend((p0[0], p1[0]), ('class 0 samples', 'class 1 samples'))

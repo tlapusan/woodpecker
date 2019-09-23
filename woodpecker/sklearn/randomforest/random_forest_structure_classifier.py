@@ -75,6 +75,7 @@ class RandomForestStructureClassifier:
         elif not correct_prediction:
             dataset = dataset[dataset[self.target] != dataset["predicted_class"]]
 
+        print(f"number of samples {dataset.shape[0]}")
         _ = plt.figure(figsize=figsize)
         if not by_class:
             _ = dataset.predicted_max_proba.plot.hist(bins=30)
@@ -85,6 +86,7 @@ class RandomForestStructureClassifier:
 
     # TODO find a better method name
     # TODO add docs
+    # TODO make it fast, it takes a long time even for 1000 samples
     def show_prediction_std(self, dataset, figsize=(20, 10), bins=20):
         prediction_std = []
         prediction_mean = []
