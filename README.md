@@ -1,9 +1,9 @@
 
 # Purpose 
 A python library used for model structure interpretation. <br>
-Right now the library contains logic for [DecisionTreeClassifier](https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html) from [scikit-learn](https://scikit-learn.org/stable/). 
-Next versions of the library will contain other types of algorithms, like [DecisionTreeRegression](https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html#sklearn.tree.DecisionTreeRegressor), 
-[RandomForest](https://scikit-learn.org/stable/modules/ensemble.html#random-forests).
+Right now the library contains logic for [DecisionTreeClassifier](https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html), [DecisionTreeRegression](https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html#sklearn.tree.DecisionTreeRegressor) and [RandomForestClassifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html) from [scikit-learn](https://scikit-learn.org/stable/). 
+Next versions of the library will contain other types of algorithms, like 
+[RandomForestRegressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html), [XGboost](https://xgboost.readthedocs.io/en/latest/).
 
 
 Becoming a better machine learning engineer is important to understand more deeply the model structure and also to have an intuition of what is happening if we change the model inputs, how these will reflect in model performance. 
@@ -140,7 +140,7 @@ The sample is the same as above.
 ![](https://github.com/tlapusan/woodpecker/blob/version_0.1/resources/docs/images/classification/decision_tree_splits_prediction_part_2.png)
 
 
-
+For other algorithms visualizations, you can take a look inside the [notebooks folder](https://github.com/tlapusan/woodpecker/tree/master/notebooks)
 
 # Release History
 - 0.1
